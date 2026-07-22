@@ -4,6 +4,7 @@ import pandas as pd
 from utils.loader import load_backlog
 from config.excluded_parts import EXCLUDED_PARTS
 from config.c4c_parts import C4C_PARTS
+from config.obsolete_parts import OBSOLETE_PARTS
 
 try:
     from config.excluded_prefixes import EXCLUDED_PREFIXES
@@ -96,8 +97,6 @@ def classify_product(material):
 
 df = load_backlog()
 
-# CLEAN MATERIAL
-
 df["Material"] = (
     df["Material"]
     .astype(str)
@@ -161,7 +160,7 @@ df["StockQty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# PRODUCT FAMILY
+# PRODUCT
 
 df["Product"] = df["Material"].apply(
     classify_product
@@ -194,7 +193,21 @@ df["Instrument"] = (
     .isin(instrument_documents)
 )
 
-# BACKLOG FILTER
+# OBSOLETE ORDERS
+
+obsolete_documents = set(
+    df.loc[
+        df["Material"].isin(OBSOLETE_PARTS),
+        "Document"
+    ]
+)
+
+df["Obsolete"] = (
+    df["Document"]
+    .isin(obsolete_documents)
+)
+
+# BACKLOG WINDOW
 
 today = pd.Timestamp.today().normalize()
 
@@ -214,9 +227,9 @@ backlog = df[
 
 # FILTERS
 
-filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
+f1, f2, f3, f4, f5 = st.columns(5)
 
-with filter_col1:
+with f1:
 
     product_filter = st.radio(
         "Product Family",
@@ -233,7 +246,7 @@ with filter_col1:
         horizontal=True
     )
 
-with filter_col2:
+with f2:
 
     status_filter = st.radio(
         "Delivery Status",
@@ -245,18 +258,22 @@ with filter_col2:
         horizontal=True
     )
 
-with filter_col3:
+with f3:
 
     exclude_instruments = st.checkbox(
-        "Exclude Instrument Orders",
-        value=False
+        "Exclude Instrument Orders"
     )
 
-with filter_col4:
+with f4:
 
     exclude_ds9800 = st.checkbox(
-        "Exclude DS9800",
-        value=False
+        "Exclude DS9800"
+    )
+
+with f5:
+
+    exclude_obsolete = st.checkbox(
+        "Exclude Obsolete"
     )
 
 # APPLY FILTERS
@@ -285,14 +302,17 @@ if exclude_ds9800:
         backlog["Product"] != "DS9800"
     ]
 
-# KPI CARDS
+if exclude_obsolete:
 
-c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+    backlog = backlog[
+        ~backlog["Obsolete"]
+    ]
 
-c1.metric(
-    "Backlog Lines",
-    len(backlog)
-)
+# KPIS
+
+c1, c2, c3, c4, c5, c6, c7, c8 = st.columns(8)
+
+c1.metric("Backlog Lines", len(backlog))
 
 c2.metric(
     "Backlog Qty",
@@ -306,11 +326,7 @@ c3.metric(
 
 c4.metric(
     "Shortage Qty",
-    int(
-        backlog["Shortage"]
-        .clip(lower=0)
-        .sum()
-    )
+    int(backlog["Shortage"].clip(lower=0).sum())
 )
 
 c5.metric(
@@ -339,7 +355,15 @@ c7.metric(
     ].nunique()
 )
 
-# DISPLAY TABLE
+c8.metric(
+    "Obsolete Orders",
+    backlog.loc[
+        backlog["Obsolete"],
+        "Document"
+    ].nunique()
+)
+
+# TABLE
 
 display_df = backlog[
     [
@@ -353,6 +377,7 @@ display_df = backlog[
         "StockQty",
         "Status",
         "Instrument",
+        "Obsolete",
         "ShipToCtry",
         "Plnt",
         "Express De"
@@ -370,6 +395,7 @@ display_df.columns = [
     "Stock",
     "Status",
     "Instrument",
+    "Obsolete",
     "Country",
     "Plant",
     "Express"
