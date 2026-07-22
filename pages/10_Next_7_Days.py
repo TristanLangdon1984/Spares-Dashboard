@@ -38,27 +38,35 @@ def classify_product(material):
     if material.startswith("S091.") or material.startswith("91."):
         return "PRIME"
 
-    if material.startswith("S21.") or material.startswith("21."):
+    if (
+        material.startswith("S21.")
+        or material.startswith("21.")
+        or material.startswith("S49.")
+        or material.startswith("49.")
+    ):
         return "BOND"
 
-    if material.startswith("S49.") or material.startswith("49."):
-        return "BOND"
-
-    if material.startswith("S26.") or material.startswith("26."):
+    if (
+        material.startswith("S26.")
+        or material.startswith("26.")
+        or material.startswith("S45.")
+        or material.startswith("45.")
+    ):
         return "PELORIS"
 
-    if material.startswith("S45.") or material.startswith("45."):
-        return "PELORIS"
-
-    if material.startswith("S33.") or material.startswith("33."):
+    if (
+        material.startswith("S33.")
+        or material.startswith("33.")
+    ):
         return "TBE"
 
     return "OTHER"
 
 
+# Load Data
 df = load_backlog()
 
-# Remove excluded materials
+# Remove Excluded Parts
 df = df[
     ~df["Material"]
     .astype(str)
@@ -66,7 +74,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Remove C4C materials
+# Remove C4C Parts
 df = df[
     ~df["Material"]
     .astype(str)
@@ -93,27 +101,71 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
+# Stock
+df["StockQty"] = pd.to_numeric(
+    df["Stock"]
+    .astype(str)
+    .str.replace(",", ".", regex=False),
+    errors="coerce"
+).fillna(0)
+
 # Product
 df["Product"] = df["Material"].apply(
     classify_product
 )
 
 today = pd.Timestamp.today().normalize()
-
 week_end = today + pd.Timedelta(days=7)
 
+# Next 7 Days
 next_7_days = df[
     (df["Adjusted Target Pack Date"].dt.normalize() > today)
     &
     (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
 ].copy()
 
-# Product Filter
-product_filter = st.radio(
-    "Product Family",
-    ["ALL", "BOND", "PRIME", "PELORIS", "TBE", "OTHER"],
-    horizontal=True
+# Status
+next_7_days["Status"] = "❌ Short"
+
+next_7_days.loc[
+    next_7_days["StockQty"] >= next_7_days["Qty"],
+    "Status"
+] = "✅ Can Deliver"
+
+next_7_days["Shortage"] = (
+    next_7_days["Qty"]
+    - next_7_days["StockQty"]
 )
+
+# Filters
+filter_col1, filter_col2 = st.columns(2)
+
+with filter_col1:
+
+    product_filter = st.radio(
+        "Product Family",
+        [
+            "ALL",
+            "BOND",
+            "PRIME",
+            "PELORIS",
+            "TBE",
+            "OTHER"
+        ],
+        horizontal=True
+    )
+
+with filter_col2:
+
+    status_filter = st.radio(
+        "Delivery Status",
+        [
+            "ALL",
+            "✅ Can Deliver",
+            "❌ Short"
+        ],
+        horizontal=True
+    )
 
 if product_filter != "ALL":
 
@@ -121,8 +173,14 @@ if product_filter != "ALL":
         next_7_days["Product"] == product_filter
     ]
 
+if status_filter != "ALL":
+
+    next_7_days = next_7_days[
+        next_7_days["Status"] == status_filter
+    ]
+
 # KPIs
-c1, c2 = st.columns(2)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric(
     "Order Lines",
@@ -134,6 +192,38 @@ c2.metric(
     int(next_7_days["Qty"].sum())
 )
 
+c3.metric(
+    "Materials",
+    next_7_days["Material"].nunique()
+)
+
+c4.metric(
+    "Shortage Qty",
+    int(
+        next_7_days["Shortage"]
+        .clip(lower=0)
+        .sum()
+    )
+)
+
+c5.metric(
+    "Can Deliver",
+    len(
+        next_7_days[
+            next_7_days["Status"] == "✅ Can Deliver"
+        ]
+    )
+)
+
+c6.metric(
+    "Short",
+    len(
+        next_7_days[
+            next_7_days["Status"] == "❌ Short"
+        ]
+    )
+)
+
 # Display
 display_df = next_7_days.copy()
 
@@ -141,7 +231,8 @@ display_df = display_df.rename(
     columns={
         "Doc. Date": "Doc Date",
         "Adjusted Target Pack Date": "Pack Date",
-        "Material Description": "Description"
+        "Material Description": "Description",
+        "StockQty": "Stock"
     }
 )
 
