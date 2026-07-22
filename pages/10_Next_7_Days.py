@@ -35,14 +35,9 @@ def classify_product(material):
 
     material = str(material).upper().strip()
 
-    # PRIME
-    if (
-        material.startswith("S091.")
-        or material.startswith("91.")
-    ):
+    if material.startswith("S091.") or material.startswith("91."):
         return "PRIME"
 
-    # BOND
     if (
         material.startswith("S21.")
         or material.startswith("21.")
@@ -51,7 +46,6 @@ def classify_product(material):
     ):
         return "BOND"
 
-    # PELORIS
     if (
         material.startswith("S26.")
         or material.startswith("26.")
@@ -60,7 +54,6 @@ def classify_product(material):
     ):
         return "PELORIS"
 
-    # TBE
     if (
         material.startswith("S33.")
         or material.startswith("33.")
@@ -70,13 +63,10 @@ def classify_product(material):
     return "OTHER"
 
 
-# -----------------------
-# LOAD DATA
-# -----------------------
-
+# Load Data
 df = load_backlog()
 
-# Remove excluded materials
+# Remove excluded parts
 df = df[
     ~df["Material"]
     .astype(str)
@@ -84,7 +74,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Capture C4C Materials
+# Capture C4C parts
 c4c_df = df[
     df["Material"]
     .astype(str)
@@ -100,31 +90,20 @@ df = df[
     .isin(C4C_PARTS)
 ]
 
-# -----------------------
-# DATES
-# -----------------------
-
+# Dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
     errors="coerce"
 )
 
-df["PD Eff.Dte"] = pd.to_datetime(
-    df["PD Eff.Dte"],
-    dayfirst=True,
-    errors="coerce"
+df["Adjusted Target Pack Date"] = df[
+    "Doc. Date"
+].apply(
+    lambda x: add_business_days(x, 3)
 )
 
-df["Adjusted Target Pack Date"] = (
-    df["Doc. Date"]
-    .apply(lambda x: add_business_days(x, 3))
-)
-
-# -----------------------
-# QTY
-# -----------------------
-
+# Qty
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
@@ -140,10 +119,7 @@ df["Qty"] = (
     .astype(int)
 )
 
-# -----------------------
-# STOCK
-# -----------------------
-
+# Stock
 df["StockQty"] = (
     df["Stock"]
     .astype(str)
@@ -159,10 +135,7 @@ df["StockQty"] = (
     .astype(int)
 )
 
-# -----------------------
-# PRODUCT
-# -----------------------
-
+# Product Classification
 df["Product"] = (
     df["Material"]
     .astype(str)
@@ -170,12 +143,7 @@ df["Product"] = (
     .apply(classify_product)
 )
 
-# -----------------------
-# NEXT 7 DAYS
-# BASED ON ADJUSTED
-# TARGET PACK DATE
-# -----------------------
-
+# Next 7 Days
 today = pd.Timestamp.today().normalize()
 
 week_end = today + pd.Timedelta(days=7)
@@ -188,3 +156,13 @@ next_7_days = df[
     &
     (
         df["Adjusted Target Pack Date"].dt.normalize()
+        <= week_end
+    )
+].copy()
+
+# Status
+next_7_days["Status"] = "❌ Short"
+
+next_7_days.loc[
+    next_7_days["StockQty"] >= next_7_days["Qty"],
+    "Status"
