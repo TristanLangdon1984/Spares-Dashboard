@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 
@@ -10,48 +11,74 @@ st.set_page_config(
 
 st.title("Next 7 Days")
 
+
+def add_business_days(start_date, business_days):
+
+    if pd.isna(start_date):
+        return pd.NaT
+
+    current_date = start_date
+    days_added = 0
+
+    while days_added < business_days:
+
+        current_date += pd.Timedelta(days=1)
+
+        if current_date.weekday() < 5:
+            days_added += 1
+
+    return current_date
+
+
 df = load_backlog()
 
-# Dates
+# Convert dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
     errors="coerce"
 )
 
-today = pd.Timestamp.today().normalize()
-week_end = today + pd.Timedelta(days=7)
-
-# Show next 7 days using PD Eff.Dte for now
-df["PD Eff.Dte"] = pd.to_datetime(
-    df["PD Eff.Dte"],
-    dayfirst=True,
-    errors="coerce"
+# Calculate Adjusted Target Pack Date
+df["Adjusted Target Pack Date"] = (
+    df["Doc. Date"]
+    .apply(lambda x: add_business_days(x, 3))
 )
 
-next_7_days = df[
-    (
-        df["PD Eff.Dte"].dt.normalize() > today
-    )
-    &
-    (
-        df["PD Eff.Dte"].dt.normalize() <= week_end
-    )
-].copy()
-
-# Qty
-next_7_days["Qty"] = (
-    next_7_days["Bklg.Qty"]
+# Convert Qty
+df["Qty"] = (
+    df["Bklg.Qty"]
     .astype(str)
     .str.replace(",", ".", regex=False)
 )
 
-next_7_days["Qty"] = pd.to_numeric(
-    next_7_days["Qty"],
-    errors="coerce"
-).fillna(0).astype(int)
+df["Qty"] = (
+    pd.to_numeric(
+        df["Qty"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
+)
 
-# KPIs
+today = pd.Timestamp.today().normalize()
+
+week_end = today + pd.Timedelta(days=7)
+
+# Next 7 days based on Adjusted Target Pack Date
+next_7_days = df[
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        > today
+    )
+    &
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        <= week_end
+    )
+].copy()
+
+# KPI
 col1, col2 = st.columns(2)
 
 col1.metric(
@@ -64,25 +91,30 @@ col2.metric(
     f"{next_7_days['Qty'].sum():,.0f}"
 )
 
-# TABLE
-st.subheader("Orders Due Next 7 Days")
-
+# Table
 display_df = next_7_days[
     [
         "Doc. Date",
-        "PD Eff.Dte",
-        "Document",
+        "Adjusted Target Pack Date",
         "Material",
         "Material Description",
         "Qty",
-        "Stock",
-        "ShipToCtry",
-        "Plnt"
+        "Stock"
     ]
 ].copy()
 
 display_df.columns = [
     "Doc Date",
-    "Due Date",
-    "Order",
+    "Pack Date",
     "Material",
+    "Description",
+    "Qty",
+    "Stock"
+]
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    height=900
+)
