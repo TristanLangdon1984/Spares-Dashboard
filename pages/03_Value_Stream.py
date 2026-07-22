@@ -1,5 +1,8 @@
 import streamlit as st
+from utils.loader import load_backlog
 
 st.title("Value Stream Dashboard")
 
-st.success("Page loaded successfully")
+df = load_backlog()
+
+st.write(df)
