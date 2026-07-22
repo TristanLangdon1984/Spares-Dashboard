@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
-from config.excluded_parts import EXCLUDED_PARTS
+from config.c4c_parts import C4C_PARTS
 
 st.set_page_config(
     page_title="Due Today",
@@ -34,13 +34,30 @@ def add_business_days(start_date, business_days):
 # Load backlog
 df = load_backlog()
 
-# Remove excluded materials
+# Exclude normal exclusions
 df = df[
     ~df["Material"]
     .astype(str)
     .str.strip()
     .isin(EXCLUDED_PARTS)
 ]
+
+# Create C4C dataset
+c4c_df = df[
+    df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(C4C_PARTS)
+].copy()
+
+# Remove C4C parts from Due Today list
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(C4C_PARTS)
+]
+
 
 # Dates
 df["Doc. Date"] = pd.to_datetime(
