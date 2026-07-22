@@ -35,9 +35,27 @@ def classify_product(material):
 
     material = str(material).upper().strip()
 
-    if material.startswith("S091.") or material.startswith("91."):
+    # TSB
+    if material.startswith("B"):
+        return "TSB"
+
+    # PRIME
+    if (
+        material.startswith("S091.")
+        or material.startswith("91.")
+    ):
         return "PRIME"
 
+    # DS9800
+    if (
+        material.startswith("98.")
+        or material.startswith("S98.")
+        or material.startswith("9800")
+        or material.startswith("DS9800")
+    ):
+        return "DS9800"
+
+    # BOND
     if (
         material.startswith("S21.")
         or material.startswith("21.")
@@ -46,6 +64,7 @@ def classify_product(material):
     ):
         return "BOND"
 
+    # PELORIS
     if (
         material.startswith("S26.")
         or material.startswith("26.")
@@ -54,6 +73,7 @@ def classify_product(material):
     ):
         return "PELORIS"
 
+    # TBE
     if (
         material.startswith("S33.")
         or material.startswith("33.")
@@ -145,13 +165,15 @@ with filter_col1:
     product_filter = st.radio(
         "Product Family",
         [
-            "ALL",
-            "BOND",
-            "PRIME",
-            "PELORIS",
-            "TBE",
-            "OTHER"
-        ],
+    "ALL",
+    "BOND",
+    "PRIME",
+    "PELORIS",
+    "TBE",
+    "DS9800",
+    "TSB",
+    "OTHER"
+],
         horizontal=True
     )
 
