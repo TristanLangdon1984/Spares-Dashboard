@@ -7,16 +7,43 @@ st.title("Due Today")
 
 df = load_backlog()
 
-df["PD Eff.Dte"] = pd.to_datetime(
-    df["PD Eff.Dte"],
+date_col = next(
+    col for col in df.columns
+    if "PD Eff.Dte" in col
+)
+
+qty_col = next(
+    col for col in df.columns
+    if "Bklg.Qty" in col
+)
+
+value_col = next(
+    col for col in df.columns
+    if "Backlog Va" in col
+)
+
+df[date_col] = pd.to_datetime(
+    df[date_col],
     dayfirst=True,
+    errors="coerce"
+)
+
+df[qty_col] = pd.to_numeric(
+    df[qty_col].astype(str)
+    .str.replace(",", ""),
+    errors="coerce"
+)
+
+df[value_col] = pd.to_numeric(
+    df[value_col].astype(str)
+    .str.replace(",", ""),
     errors="coerce"
 )
 
 today = pd.Timestamp.today().normalize()
 
 due_today = df[
-    df["PD Eff.Dte"] <= today
+    df[date_col] <= today
 ]
 
 c1, c2, c3 = st.columns(3)
@@ -28,23 +55,12 @@ c1.metric(
 
 c2.metric(
     "Backlog Qty",
-    due_today["Bklg.Qty"].sum()
+    int(due_today[qty_col].sum())
 )
 
 c3.metric(
     "Backlog Value",
-    f"${due_today['Backlog Va'].sum():,.0f}"
+    f"${due_today[value_col].sum():,.0f}"
 )
 
-st.dataframe(
-    due_today[
-        [
-            "Material",
-            "Material Description",
-            "Bklg.Qty",
-            "Stock",
-            "Customer name",
-            "PD Eff.Dte"
-        ]
-    ]
-)
+st.dataframe(due_today)
