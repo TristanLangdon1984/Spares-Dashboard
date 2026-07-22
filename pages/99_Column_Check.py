@@ -1,12 +1,9 @@
 import streamlit as st
+from utils.loader import load_backlog
 
-try:
-    import utils.file_loader as fl
+st.title("Column Check")
 
-    st.success("file_loader imported successfully")
+df = load_backlog()
 
-    st.write(dir(fl))
-
-except Exception as e:
-
-    st.error(str(e))
+st.write(df.columns.tolist())
+st.dataframe(df.head())
