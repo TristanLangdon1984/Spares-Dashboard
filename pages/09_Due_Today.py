@@ -11,10 +11,30 @@ st.set_page_config(
 
 st.title("Due Today")
 
+
+def add_business_days(start_date, business_days):
+
+    if pd.isna(start_date):
+        return pd.NaT
+
+    date = start_date
+
+    days_added = 0
+
+    while days_added < business_days:
+
+        date = date + pd.Timedelta(days=1)
+
+        if date.weekday() < 5:
+            days_added += 1
+
+    return date
+
+
 # Load backlog
 df = load_backlog()
 
-# Exclude materials
+# Remove excluded materials
 df = df[
     ~df["Material"]
     .astype(str)
@@ -23,13 +43,26 @@ df = df[
 ]
 
 # Dates
+df["Doc. Date"] = pd.to_datetime(
+    df["Doc. Date"],
+    dayfirst=True,
+    errors="coerce"
+)
+
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
     errors="coerce"
 )
 
-# Qty
+# Create Adjusted Target Pack Date
+df["Adjusted Target Pack Date"] = df[
+    "Doc. Date"
+].apply(
+    lambda x: add_business_days(x, 3)
+)
+
+# Qty conversion
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
@@ -45,7 +78,7 @@ df["Qty"] = (
     .astype(int)
 )
 
-# Stock
+# Stock conversion
 df["StockQty"] = (
     df["Stock"]
     .astype(str)
@@ -63,12 +96,13 @@ df["StockQty"] = (
 
 today = pd.Timestamp.today().normalize()
 
-# Due Today Only
+# Due Today based on Adjusted Target Pack Date
 due_today = df[
-    df["PD Eff.Dte"].dt.normalize() == today
+    df["Adjusted Target Pack Date"].dt.normalize()
+    == today
 ].copy()
 
-# Shortage
+# Shortage calculation
 due_today["Shortage"] = (
     due_today["Qty"]
     - due_today["StockQty"]
@@ -77,44 +111,40 @@ due_today["Shortage"] = (
 # Status
 due_today["Status"] = due_today.apply(
     lambda x:
-    "Can Deliver"
+    "✅ Can Deliver"
     if x["StockQty"] >= x["Qty"]
-    else "Short",
+    else "❌ Short",
     axis=1
 )
 
-# KPI Row
+# KPIs
 col1, col2, col3, col4 = st.columns(4)
 
-with col1:
-    st.metric(
-        "Orders Due Today",
-        len(due_today)
-    )
+col1.metric(
+    "Orders Due Today",
+    len(due_today)
+)
 
-with col2:
-    st.metric(
-        "Total Qty",
-        f"{due_today['Qty'].sum():,.0f}"
-    )
+col2.metric(
+    "Total Qty",
+    f"{due_today['Qty'].sum():,.0f}"
+)
 
-with col3:
-    st.metric(
-        "Materials",
-        due_today["Material"].nunique()
-    )
+col3.metric(
+    "Unique Materials",
+    due_today["Material"].nunique()
+)
 
-with col4:
-    st.metric(
-        "Shortage Qty",
-        f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
-    )
+col4.metric(
+    "Shortage Qty",
+    f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
+)
 
 # Display table
 display_df = due_today[
     [
         "Doc. Date",
-        "RSD",
+        "Adjusted Target Pack Date",
         "PD Eff.Dte",
         "Document",
         "Material",
@@ -126,14 +156,19 @@ display_df = due_today[
         "Plnt",
         "Express De"
     ]
-].sort_values(
-    by=["Status", "Material"]
+]
+
+display_df = display_df.sort_values(
+    by=[
+        "Adjusted Target Pack Date",
+        "Material"
+    ]
 )
 
 display_df.columns = [
     "Doc Date",
-    "RSD",
-    "Due Date",
+    "Adjusted Target Pack Date",
+    "Original Due Date",
     "Order",
     "Material",
     "Description",
@@ -145,18 +180,23 @@ display_df.columns = [
     "Express"
 ]
 
-def colour_status(row):
+def highlight_row(row):
 
-    if row["Status"] == "Can Deliver":
-        return ["background-color:#d4edda"] * len(row)
+    if "Can Deliver" in row["Status"]:
+        return [
+            "background-color:#d4edda"
+        ] * len(row)
 
-    return ["background-color:#f8d7da"] * len(row)
+    return [
+        "background-color:#f8d7da"
+    ] * len(row)
 
-st.subheader("Due Today Orders")
+
+st.subheader("Orders Due Today")
 
 st.dataframe(
     display_df.style.apply(
-        colour_status,
+        highlight_row,
         axis=1
     ),
     use_container_width=True,
