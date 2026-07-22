@@ -198,6 +198,7 @@ backlog = df[
 ].copy()
 
 # FILTERS
+
 filter_col1, filter_col2, filter_col3 = st.columns(3)
 
 with filter_col1:
@@ -231,8 +232,9 @@ with filter_col2:
 
 with filter_col3:
 
-    instrument_only = st.checkbox(
-        "Instrument Orders Only"
+    exclude_instruments = st.checkbox(
+        "Exclude Instrument Orders",
+        value=False
     )
 
 # APPLY FILTERS
@@ -249,10 +251,10 @@ if status_filter != "ALL":
         backlog["Status"] == status_filter
     ]
 
-if instrument_only:
+if exclude_instruments:
 
     backlog = backlog[
-        backlog["Instrument"]
+        ~backlog["Instrument"]
     ]
 
 # KPIS
