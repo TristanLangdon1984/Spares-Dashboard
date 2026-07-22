@@ -20,7 +20,8 @@ def load_parts():
     df = pd.read_excel(
         FILE,
         sheet_name="Part Timings",
-        engine="openpyxl"
+        engine="openpyxl",
+        header=0
     )
 
     return df
