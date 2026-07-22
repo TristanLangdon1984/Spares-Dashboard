@@ -232,3 +232,37 @@ display_df = backlog[
         "Material Description",
         "Qty",
         "StockQty",
+        "Status",
+        "ShipToCtry",
+        "Plnt",
+        "Express De"
+    ]
+].copy()
+
+display_df.columns = [
+    "Doc Date",
+    "Pack Date",
+    "PD Eff Date",
+    "Order",
+    "Material",
+    "Description",
+    "Qty",
+    "Stock",
+    "Status",
+    "Country",
+    "Plant",
+    "Express"
+]
+
+display_df = display_df.sort_values(
+    ["Pack Date", "Material"]
+)
+
+st.subheader("Backlog Recovery")
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    height=900
+)
