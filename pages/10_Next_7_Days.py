@@ -127,4 +127,4 @@ display_df = next_7_days.copy()
 
 display_df = display_df.rename(
     columns={
-)
+
