@@ -1,8 +1,6 @@
 streamlit
 pandas
-numpy
 plotly
 openpyxl
-xlsxwriter
-scikit-learn
-python-dateutil
+numpy
+office365-rest-python-client
