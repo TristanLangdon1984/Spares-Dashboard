@@ -6,20 +6,11 @@ MB51_FILE = "data/MB51 - MEL_SPARES.XLS"
 
 def clean_columns(df):
 
-    cols = []
-
-    for col in df.columns:
-
-        col = str(col)
-
-        col = col.replace("\ufeff", "")
-        col = col.replace("ÿþ", "")
-
-        col = " ".join(col.split())
-
-        cols.append(col)
-
-    df.columns = cols
+    df.columns = (
+        df.columns.astype(str)
+        .str.replace("\ufeff", "", regex=False)
+        .str.strip()
+    )
 
     return df
 
@@ -30,7 +21,6 @@ def load_backlog():
         BACKLOG_FILE,
         sep="\t",
         encoding="utf-16-le",
-        encoding_errors="ignore",
         engine="python"
     )
 
@@ -43,7 +33,6 @@ def load_mb51():
         MB51_FILE,
         sep="\t",
         encoding="utf-16-le",
-        encoding_errors="ignore",
         engine="python"
     )
 
