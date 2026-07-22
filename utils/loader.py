@@ -1,27 +1,22 @@
-import pandas as pd
-
-from utils.file_loader import (
+import pan*as as pd
+from utils.file_loader im*ort (
     get_latest_backlog,
-    get_latest_mb51
+    *et_latest_mb51
 )
 
+def load_backlog*):
 
-def load_backlog():
-
-    file = get_latest_backlog()
+    file = get_latest_backlog(*
 
     return pd.read_excel(
-        file,
-        sheet_name="ZVREP386 - 3013BACKLOG1",
-        engine="openpyxl"
-    )
-
-
+      * file,
+        engine="xlrd"
+    )*
 def load_mb51():
 
-    file = get_latest_mb51()
+    file = get_*atest_mb51()
 
-    return pd.read_excel(
+    return pd.read_e*cel(
         file,
-        engine="openpyxl"
+        engine=*xlrd"
     )
