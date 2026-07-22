@@ -225,16 +225,35 @@ c6.metric(
 )
 
 # Display
-display_df = next_7_days.copy()
+display_df = next_7_days[
+    [
+        "Doc. Date",
+        "Adjusted Target Pack Date",
+        "Document",
+        "Material",
+        "Material Description",
+        "Qty",
+        "StockQty",
+        "Status",
+        "ShipToCtry",
+        "Plnt",
+        "Express De"
+    ]
+].copy()
 
-display_df = display_df.rename(
-    columns={
-        "Doc. Date": "Doc Date",
-        "Adjusted Target Pack Date": "Pack Date",
-        "Material Description": "Description",
-        "StockQty": "Stock"
-    }
-)
+display_df.columns = [
+    "Doc Date",
+    "Pack Date",
+    "Order",
+    "Material",
+    "Description",
+    "Qty",
+    "Stock",
+    "Status",
+    "Country",
+    "Plant",
+    "Express"
+]
 
 st.dataframe(
     display_df,
