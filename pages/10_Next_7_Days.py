@@ -229,6 +229,7 @@ display_df = next_7_days[
     [
         "Doc. Date",
         "Adjusted Target Pack Date",
+        "PD Eff.Dte",
         "Document",
         "Material",
         "Material Description",
@@ -244,6 +245,7 @@ display_df = next_7_days[
 display_df.columns = [
     "Doc Date",
     "Pack Date",
+    "PD Eff Date",
     "Order",
     "Material",
     "Description",
@@ -254,6 +256,13 @@ display_df.columns = [
     "Plant",
     "Express"
 ]
+
+display_df = display_df.sort_values(
+    by=[
+        "Pack Date",
+        "Material"
+    ]
+)
 
 st.dataframe(
     display_df,
