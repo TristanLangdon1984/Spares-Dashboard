@@ -1,38 +1,27 @@
 import pandas as pd
 
-FILE = "data/SAP Spares Report Generator.xlsm"
-
-
-def load_metrics():
-
-    df = pd.read_excel(
-        FILE,
-        sheet_name="Cell Metric History",
-        engine="openpyxl",
-        header=1
-    )
-
-    return df
-
-
-def load_parts():
-
-    df = pd.read_excel(
-        FILE,
-        sheet_name="Part Timings",
-        engine="openpyxl",
-        header=0
-    )
-
-    return df
+from utils.file_loader import (
+    get_latest_backlog,
+    get_latest_mb51
+)
 
 
 def load_backlog():
 
-    df = pd.read_excel(
-        FILE,
+    file = get_latest_backlog()
+
+    return pd.read_excel(
+        file,
         sheet_name="ZVREP386 - 3013BACKLOG1",
         engine="openpyxl"
     )
 
-    return df
+
+def load_mb51():
+
+    file = get_latest_mb51()
+
+    return pd.read_excel(
+        file,
+        engine="openpyxl"
+    )
