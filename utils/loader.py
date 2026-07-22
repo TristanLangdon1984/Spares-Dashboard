@@ -13,10 +13,7 @@ def clean_columns(df):
         col = str(col)
 
         col = col.replace("\ufeff", "")
-
         col = col.replace("ÿþ", "")
-
-        col = "".join(col)
 
         col = " ".join(col.split())
 
@@ -33,6 +30,7 @@ def load_backlog():
         BACKLOG_FILE,
         sep="\t",
         encoding="utf-16",
+        encoding_errors="ignore",
         engine="python"
     )
 
@@ -45,6 +43,7 @@ def load_mb51():
         MB51_FILE,
         sep="\t",
         encoding="utf-16",
+        encoding_errors="ignore",
         engine="python"
     )
 
