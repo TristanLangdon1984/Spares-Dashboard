@@ -53,9 +53,6 @@ def classify_product(material):
     if material.startswith("B"):
         return "TSB"
 
-    if material.startswith("S091.") or material.startswith("91."):
-        return "PRIME"
-
     if (
         material.startswith("98.")
         or material.startswith("S98.")
@@ -63,6 +60,12 @@ def classify_product(material):
         or material.startswith("DS9800")
     ):
         return "DS9800"
+
+    if (
+        material.startswith("S091.")
+        or material.startswith("91.")
+    ):
+        return "PRIME"
 
     if (
         material.startswith("S21.")
@@ -158,7 +161,7 @@ df["StockQty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# PRODUCT
+# PRODUCT FAMILY
 
 df["Product"] = df["Material"].apply(
     classify_product
@@ -174,8 +177,7 @@ df.loc[
 ] = "✅ Can Deliver"
 
 df["Shortage"] = (
-    df["Qty"]
-    - df["StockQty"]
+    df["Qty"] - df["StockQty"]
 )
 
 # INSTRUMENT ORDERS
@@ -192,7 +194,7 @@ df["Instrument"] = (
     .isin(instrument_documents)
 )
 
-# BACKLOG WINDOW
+# BACKLOG FILTER
 
 today = pd.Timestamp.today().normalize()
 
@@ -212,7 +214,7 @@ backlog = df[
 
 # FILTERS
 
-filter_col1, filter_col2, filter_col3 = st.columns(3)
+filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4)
 
 with filter_col1:
 
@@ -250,6 +252,13 @@ with filter_col3:
         value=False
     )
 
+with filter_col4:
+
+    exclude_ds9800 = st.checkbox(
+        "Exclude DS9800",
+        value=False
+    )
+
 # APPLY FILTERS
 
 if product_filter != "ALL":
@@ -268,6 +277,12 @@ if exclude_instruments:
 
     backlog = backlog[
         ~backlog["Instrument"]
+    ]
+
+if exclude_ds9800:
+
+    backlog = backlog[
+        backlog["Product"] != "DS9800"
     ]
 
 # KPI CARDS
@@ -324,7 +339,7 @@ c7.metric(
     ].nunique()
 )
 
-# TABLE
+# DISPLAY TABLE
 
 display_df = backlog[
     [
