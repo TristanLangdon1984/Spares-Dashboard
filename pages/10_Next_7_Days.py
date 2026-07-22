@@ -13,6 +13,24 @@ st.set_page_config(
 st.title("Next 7 Days")
 
 
+def add_business_days(start_date, business_days):
+
+    if pd.isna(start_date):
+        return pd.NaT
+
+    current_date = start_date
+    days_added = 0
+
+    while days_added < business_days:
+
+        current_date += pd.Timedelta(days=1)
+
+        if current_date.weekday() < 5:
+            days_added += 1
+
+    return current_date
+
+
 def classify_product(material):
 
     material = str(material).upper().strip()
@@ -58,7 +76,7 @@ def classify_product(material):
 
 df = load_backlog()
 
-# Remove fully excluded materials
+# Remove excluded materials
 df = df[
     ~df["Material"]
     .astype(str)
@@ -66,7 +84,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Capture C4C materials
+# Capture C4C Materials
 c4c_df = df[
     df["Material"]
     .astype(str)
@@ -98,10 +116,13 @@ df["PD Eff.Dte"] = pd.to_datetime(
     errors="coerce"
 )
 
+df["Adjusted Target Pack Date"] = (
+    df["Doc. Date"]
+    .apply(lambda x: add_business_days(x, 3))
+)
+
 # -----------------------
 # QTY
-# SAP Export:
-# 3,000 = 3
 # -----------------------
 
 df["Qty"] = (
@@ -139,7 +160,7 @@ df["StockQty"] = (
 )
 
 # -----------------------
-# PRODUCT CLASSIFICATION
+# PRODUCT
 # -----------------------
 
 df["Product"] = (
@@ -151,8 +172,19 @@ df["Product"] = (
 
 # -----------------------
 # NEXT 7 DAYS
-# Based on PD Eff.Dte
+# BASED ON ADJUSTED
+# TARGET PACK DATE
 # -----------------------
 
 today = pd.Timestamp.today().normalize()
 
+week_end = today + pd.Timedelta(days=7)
+
+next_7_days = df[
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        > today
+    )
+    &
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
