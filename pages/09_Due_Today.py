@@ -3,10 +3,16 @@ import pandas as pd
 
 from utils.loader import load_backlog
 
+st.set_page_config(
+    page_title="Due Today",
+    layout="wide"
+)
+
 st.title("Due Today")
 
 df = load_backlog()
 
+# Clean data
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
@@ -18,37 +24,36 @@ df["Bklg.Qty"] = pd.to_numeric(
     errors="coerce"
 )
 
+df["Stock"] = pd.to_numeric(
+    df["Stock"],
+    errors="coerce"
+)
+
 today = pd.Timestamp.today().normalize()
 
+# Due today and overdue
 due_today = df[
     df["PD Eff.Dte"] <= today
-]
+].copy()
 
-c1, c2 = st.columns(2)
+# KPIs
+col1, col2, col3 = st.columns(3)
 
-c1.metric(
-    "Order Lines Due",
-    len(due_today)
-)
+with col1:
+    st.metric(
+        "Order Lines Due",
+        len(due_today)
+    )
 
-c2.metric(
-    "Backlog Qty",
-    int(due_today["Bklg.Qty"].fillna(0).sum())
-)
+with col2:
+    st.metric(
+        "Backlog Qty",
+        f"{due_today['Bklg.Qty'].fillna(0).sum():,.0f}"
+    )
 
-st.dataframe(
-    due_today[
-        [
-            "Document",
-            "Material",
-            "Material Description",
-            "Bklg.Qty",
-            "Stock",
-            "ShipToCtry",
-            "Plnt",
-            "PD Eff.Dte",
-            "Express De"
-        ]
-    ],
-    use_container_width=True
-)
+with col3:
+    st.metric(
+        "Materials",
+        due_today["Material"].nunique()
+    )
+
