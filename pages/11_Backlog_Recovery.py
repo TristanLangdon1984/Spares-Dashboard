@@ -18,6 +18,17 @@ st.set_page_config(
 st.title("Backlog Recovery")
 
 
+INSTRUMENT_PARTS = [
+    "21.2201",
+    "21.2821",
+    "45.0001",
+    "45.0005",
+    "49.0051",
+    "49.1501",
+    "91.0021"
+]
+
+
 def add_business_days(start_date, business_days):
 
     if pd.isna(start_date):
@@ -40,18 +51,12 @@ def classify_product(material):
 
     material = str(material).upper().strip()
 
-    # TSB
     if material.startswith("B"):
         return "TSB"
 
-    # PRIME
-    if (
-        material.startswith("S091.")
-        or material.startswith("91.")
-    ):
+    if material.startswith("S091.") or material.startswith("91."):
         return "PRIME"
 
-    # DS9800
     if (
         material.startswith("98.")
         or material.startswith("S98.")
@@ -60,7 +65,6 @@ def classify_product(material):
     ):
         return "DS9800"
 
-    # BOND
     if (
         material.startswith("S21.")
         or material.startswith("21.")
@@ -69,7 +73,6 @@ def classify_product(material):
     ):
         return "BOND"
 
-    # PELORIS
     if (
         material.startswith("S26.")
         or material.startswith("26.")
@@ -78,7 +81,6 @@ def classify_product(material):
     ):
         return "PELORIS"
 
-    # TBE
     if (
         material.startswith("S33.")
         or material.startswith("33.")
@@ -166,6 +168,18 @@ df["Shortage"] = (
     df["Qty"] - df["StockQty"]
 )
 
+# INSTRUMENT LOGIC
+instrument_documents = set(
+    df.loc[
+        df["Material"].isin(INSTRUMENT_PARTS),
+        "Document"
+    ]
+)
+
+df["Instrument"] = df["Document"].isin(
+    instrument_documents
+)
+
 # BACKLOG FILTER
 today = pd.Timestamp.today().normalize()
 
@@ -184,22 +198,22 @@ backlog = df[
 ].copy()
 
 # FILTERS
-filter_col1, filter_col2 = st.columns(2)
+filter_col1, filter_col2, filter_col3 = st.columns(3)
 
 with filter_col1:
 
     product_filter = st.radio(
         "Product Family",
-       [
-    "ALL",
-    "BOND",
-    "PRIME",
-    "PELORIS",
-    "TBE",
-    "DS9800",
-    "TSB",
-    "OTHER"
-],
+        [
+            "ALL",
+            "BOND",
+            "PRIME",
+            "PELORIS",
+            "TBE",
+            "DS9800",
+            "TSB",
+            "OTHER"
+        ],
         horizontal=True
     )
 
@@ -215,6 +229,14 @@ with filter_col2:
         horizontal=True
     )
 
+with filter_col3:
+
+    instrument_only = st.checkbox(
+        "Instrument Orders Only"
+    )
+
+# APPLY FILTERS
+
 if product_filter != "ALL":
 
     backlog = backlog[
@@ -227,8 +249,14 @@ if status_filter != "ALL":
         backlog["Status"] == status_filter
     ]
 
-# KPI CARDS
-c1, c2, c3, c4, c5, c6 = st.columns(6)
+if instrument_only:
+
+    backlog = backlog[
+        backlog["Instrument"]
+    ]
+
+# KPIS
+c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 
 c1.metric(
     "Backlog Lines",
@@ -247,11 +275,7 @@ c3.metric(
 
 c4.metric(
     "Shortage Qty",
-    int(
-        backlog["Shortage"]
-        .clip(lower=0)
-        .sum()
-    )
+    int(backlog["Shortage"].clip(lower=0).sum())
 )
 
 c5.metric(
@@ -272,6 +296,16 @@ c6.metric(
     )
 )
 
+c7.metric(
+    "Instrument Orders",
+    backlog["Document"].nunique()
+    if instrument_only
+    else backlog.loc[
+        backlog["Instrument"],
+        "Document"
+    ].nunique()
+)
+
 # TABLE
 display_df = backlog[
     [
@@ -284,6 +318,7 @@ display_df = backlog[
         "Qty",
         "StockQty",
         "Status",
+        "Instrument",
         "ShipToCtry",
         "Plnt",
         "Express De"
@@ -300,6 +335,7 @@ display_df.columns = [
     "Qty",
     "Stock",
     "Status",
+    "Instrument",
     "Country",
     "Plant",
     "Express"
