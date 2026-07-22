@@ -1,13 +1,10 @@
 import streamlit as st
 
-from utils.loader import load_backlog
+with open(
+    "data/ZVREP386 - 3013BACKLOG1.XLS",
+    "rb"
+) as f:
 
-st.title("Column Check")
+    raw = f.read(200)
 
-df = load_backlog()
-
-st.write(df.columns.tolist())
-
-st.write(df.shape)
-
-st.dataframe(df.head())
+st.write(raw)
