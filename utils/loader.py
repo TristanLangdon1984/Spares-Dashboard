@@ -29,7 +29,7 @@ def load_backlog():
     df = pd.read_csv(
         BACKLOG_FILE,
         sep="\t",
-        encoding="utf-16",
+        encoding="utf-16-le",
         encoding_errors="ignore",
         engine="python"
     )
@@ -42,7 +42,7 @@ def load_mb51():
     df = pd.read_csv(
         MB51_FILE,
         sep="\t",
-        encoding="utf-16",
+        encoding="utf-16-le",
         encoding_errors="ignore",
         engine="python"
     )
