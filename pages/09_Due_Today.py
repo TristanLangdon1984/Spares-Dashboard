@@ -11,7 +11,7 @@ st.set_page_config(
 
 st.title("Due Today")
 
-# Load SAP Backlog
+# Load backlog
 df = load_backlog()
 
 # Remove excluded materials
@@ -22,20 +22,20 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Convert dates
+# Date conversion
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
     errors="coerce"
 )
 
-# Convert quantities
+# Quantity conversion
 df["Bklg.Qty"] = pd.to_numeric(
     df["Bklg.Qty"],
     errors="coerce"
 )
 
-# Convert stock
+# Stock conversion
 df["Stock"] = pd.to_numeric(
     df["Stock"],
     errors="coerce"
@@ -81,7 +81,6 @@ with col4:
         f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
     )
 
-# Display data
 display_df = due_today[
     [
         "Doc. Date",
@@ -97,7 +96,7 @@ display_df = due_today[
         "Express De"
     ]
 ].sort_values(
-    by=["PD Eff.Dte", "Material"],
+    by="PD Eff.Dte",
     ascending=True
 )
 
@@ -119,13 +118,9 @@ st.subheader("Due Today / Overdue Orders")
 
 st.table(display_df)
 
-st.divider()
-
 with st.expander("Excluded Materials"):
-
-    excluded_df = pd.DataFrame(
-        {"Material": EXCLUDED_PARTS}
+    st.table(
+        pd.DataFrame(
+            {"Material": EXCLUDED_PARTS}
+        )
     )
-
-    st.table(excluded_df)
-``
