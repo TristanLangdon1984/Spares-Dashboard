@@ -109,8 +109,52 @@ df["Doc. Date"] = pd.to_datetime(
     errors="coerce"
 )
 
-df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
+def subtract_business_days(start_date, business_days):
+
+    if pd.isna(start_date):
+        return pd.NaT
+
+    current_date = start_date
+    days_removed = 0
+
+    while days_removed < business_days:
+
+        current_date = current_date - pd.Timedelta(days=1)
+
+        if current_date.weekday() < 5:
+            days_removed += 1
+
+    return current_date
+
+
+# Initial pack date = Doc Date + 3 working days
+
+initial_pack_date = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
+)
+
+df["Adjusted Target Pack Date"] = initial_pack_date
+
+# Compare to PD Eff Date
+
+date_gap = (
+    df["PD Eff.Dte"]
+    - initial_pack_date
+).dt.days
+
+# If PD Eff Date is more than 2 days later than the pack date
+# then work backwards 3 business days from PD Eff Date
+
+needs_replan = date_gap > 2
+
+df.loc[
+    needs_replan,
+    "Adjusted Target Pack Date"
+] = df.loc[
+    needs_replan,
+    "PD Eff.Dte"
+].apply(
+    lambda x: subtract_business_days(x, 3)
 )
 
 # Qty
