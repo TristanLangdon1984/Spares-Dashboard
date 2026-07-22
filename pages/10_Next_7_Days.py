@@ -1,8 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
+from config.excluded_parts import EXCLUDED_PARTS
 
 st.set_page_config(
     page_title="Next 7 Days",
@@ -32,20 +32,27 @@ def add_business_days(start_date, business_days):
 
 df = load_backlog()
 
-# Convert dates
+# Remove excluded materials
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(EXCLUDED_PARTS)
+]
+
+# Dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
     errors="coerce"
 )
 
-# Calculate Adjusted Target Pack Date
 df["Adjusted Target Pack Date"] = (
     df["Doc. Date"]
     .apply(lambda x: add_business_days(x, 3))
 )
 
-# Convert Qty
+# Qty conversion
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
@@ -61,11 +68,25 @@ df["Qty"] = (
     .astype(int)
 )
 
-today = pd.Timestamp.today().normalize()
+# Stock conversion
+df["StockQty"] = (
+    df["Stock"]
+    .astype(str)
+    .str.replace(",", ".", regex=False)
+)
 
+df["StockQty"] = (
+    pd.to_numeric(
+        df["StockQty"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
+)
+
+today = pd.Timestamp.today().normalize()
 week_end = today + pd.Timedelta(days=7)
 
-# Next 7 days based on Adjusted Target Pack Date
 next_7_days = df[
     (
         df["Adjusted Target Pack Date"].dt.normalize()
@@ -78,17 +99,30 @@ next_7_days = df[
     )
 ].copy()
 
-# KPI
-col1, col2 = st.columns(2)
+# Delivery status
+next_7_days["Status"] = "❌ Short"
 
-col1.metric(
+next_7_days.loc[
+    next_7_days["StockQty"] >= next_7_days["Qty"],
+    "Status"
+] = "✅ Can Deliver"
+
+# KPIs
+c1, c2, c3 = st.columns(3)
+
+c1.metric(
     "Order Lines",
     len(next_7_days)
 )
 
-col2.metric(
+c2.metric(
     "Total Qty",
     f"{next_7_days['Qty'].sum():,.0f}"
+)
+
+c3.metric(
+    "Materials",
+    next_7_days["Material"].nunique()
 )
 
 # Table
@@ -99,7 +133,10 @@ display_df = next_7_days[
         "Material",
         "Material Description",
         "Qty",
-        "Stock"
+        "StockQty",
+        "Status",
+        "ShipToCtry",
+        "Plnt"
     ]
 ].copy()
 
@@ -109,8 +146,18 @@ display_df.columns = [
     "Material",
     "Description",
     "Qty",
-    "Stock"
+    "Stock",
+    "Status",
+    "Country",
+    "Plant"
 ]
+
+display_df = display_df.sort_values(
+    by=[
+        "Pack Date",
+        "Material"
+    ]
+)
 
 st.dataframe(
     display_df,
