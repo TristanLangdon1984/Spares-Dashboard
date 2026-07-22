@@ -2,175 +2,20 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
-from config.excluded_parts import EXCLUDED_PARTS
-from config.excluded_keywords import EXCLUDED_KEYWORDS
-from config.excluded_prefixes import EXCLUDED_PREFIXES
 
-st.set_page_config(
-    page_title="Due Today",
-    layout="wide"
-)
+st.title("Due Today Debug")
 
-st.title("Due Today")
-
-# Load backlog
 df = load_backlog()
 
-# Remove exact material exclusions
-df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(EXCLUDED_PARTS)
-]
+st.write("Columns")
+st.write(df.columns.tolist())
 
-# Remove material prefixes
-for prefix in EXCLUDED_PREFIXES:
+st.write("Bklg.Qty Raw Values")
+st.write(df["Bklg.Qty"].head(20))
 
-    df = df[
-        ~df["Material"]
-        .astype(str)
-        .str.strip()
-        .str.startswith(prefix)
-    ]
+st.write("Bklg.Qty Data Type")
+st.write(df["Bklg.Qty"].dtype)
 
-# Remove description keywords
-keyword_pattern = "|".join(EXCLUDED_KEYWORDS)
+st.write("Unique Sample Values")
+st.write(df["Bklg.Qty"].dropna().head(50).tolist())
 
-df = df[
-    ~df["Material Description"]
-    .astype(str)
-    .str.upper()
-    .str.contains(
-        keyword_pattern,
-        na=False,
-        regex=True
-    )
-]
-
-# Convert dates
-df["PD Eff.Dte"] = pd.to_datetime(
-    df["PD Eff.Dte"],
-    dayfirst=True,
-    errors="coerce"
-)
-
-# Convert quantity
-df["Bklg.Qty"] = pd.to_numeric(
-    df["Bklg.Qty"],
-    errors="coerce"
-)
-
-# Convert stock
-df["Stock"] = pd.to_numeric(
-    df["Stock"],
-    errors="coerce"
-)
-
-today = pd.Timestamp.today().normalize()
-
-# Remove anything older than 3 months
-three_months_ago = today - pd.DateOffset(months=3)
-
-df = df[
-    df["PD Eff.Dte"] >= three_months_ago
-]
-
-# Due today only
-due_today = df[
-    df["PD Eff.Dte"].dt.normalize() == today
-].copy()
-
-# Shortage calculation
-due_today["Shortage"] = (
-    due_today["Bklg.Qty"].fillna(0)
-    - due_today["Stock"].fillna(0)
-)
-
-# KPI Row
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric(
-        "Order Lines Due",
-        len(due_today)
-    )
-
-with col2:
-    st.metric(
-        "Backlog Qty",
-        f"{due_today['Bklg.Qty'].sum():,.0f}"
-    )
-
-with col3:
-    st.metric(
-        "Materials",
-        due_today["Material"].nunique()
-    )
-
-with col4:
-    st.metric(
-        "Shortage Qty",
-        f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
-    )
-
-# Display table
-display_df = due_today[
-    [
-        "Doc. Date",
-        "RSD",
-        "PD Eff.Dte",
-        "Document",
-        "Material",
-        "Material Description",
-        "Bklg.Qty",
-        "Stock",
-        "ShipToCtry",
-        "Plnt",
-        "Express De"
-    ]
-].sort_values(
-    by="PD Eff.Dte",
-    ascending=True
-)
-
-display_df.columns = [
-    "Doc Date",
-    "RSD",
-    "Due Date",
-    "Order",
-    "Material",
-    "Description",
-    "Qty",
-    "Stock",
-    "Country",
-    "Plant",
-    "Express"
-]
-
-st.subheader(
-    "Due Today / Overdue Orders (Last 3 Months)"
-)
-
-st.table(display_df)
-
-with st.expander("Excluded Materials"):
-    st.table(
-        pd.DataFrame(
-            {"Material": EXCLUDED_PARTS}
-        )
-    )
-
-with st.expander("Excluded Material Prefixes"):
-    st.table(
-        pd.DataFrame(
-            {"Prefix": EXCLUDED_PREFIXES}
-        )
-    )
-
-with st.expander("Excluded Description Keywords"):
-    st.table(
-        pd.DataFrame(
-            {"Keyword": EXCLUDED_KEYWORDS}
-        )
-    )
