@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
-from config.excluded_parts import EXCLUDED_PARTS
-from config.c4c_parts import C4C_PARTS
 
 st.set_page_config(
     page_title="Next 7 Days",
@@ -31,55 +29,8 @@ def add_business_days(start_date, business_days):
     return current_date
 
 
-def classify_product(material):
-
-    material = str(material).upper().strip()
-
-    if material.startswith("S091.") or material.startswith("91."):
-        return "PRIME"
-
-    if (
-        material.startswith("S21.")
-        or material.startswith("21.")
-        or material.startswith("S49.")
-        or material.startswith("49.")
-    ):
-        return "BOND"
-
-    if (
-        material.startswith("S26.")
-        or material.startswith("26.")
-        or material.startswith("S45.")
-        or material.startswith("45.")
-    ):
-        return "PELORIS"
-
-    if material.startswith("S33.") or material.startswith("33."):
-        return "TBE"
-
-    return "OTHER"
-
-
-# Load Data
 df = load_backlog()
 
-# Remove Excluded Parts
-df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(EXCLUDED_PARTS)
-]
-
-# Remove C4C Parts
-df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(C4C_PARTS)
-]
-
-# Dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -90,74 +41,52 @@ df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
 )
 
-# Qty
-df["Qty"] = (
+df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
-    .str.replace(",", ".", regex=False)
-)
-
-df["Qty"] = pd.to_numeric(
-    df["Qty"],
+    .str.replace(",", ".", regex=False),
     errors="coerce"
-)
-
-df["Qty"] = df["Qty"].fillna(0).astype(int)
-
-# Stock
-df["StockQty"] = (
-    df["Stock"]
-    .astype(str)
-    .str.replace(",", ".", regex=False)
-)
-
-df["StockQty"] = pd.to_numeric(
-    df["StockQty"],
-    errors="coerce"
-)
-
-df["StockQty"] = df["StockQty"].fillna(0).astype(int)
-
-# Product Family
-df["Product"] = df["Material"].apply(
-    classify_product
-)
+).fillna(0)
 
 today = pd.Timestamp.today().normalize()
 week_end = today + pd.Timedelta(days=7)
 
-# Next 7 Days
 next_7_days = df[
     (df["Adjusted Target Pack Date"].dt.normalize() > today)
     &
     (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
 ].copy()
 
-# Status
-next_7_days["Status"] = "❌ Short"
-
-next_7_days.loc[
-    next_7_days["StockQty"] >= next_7_days["Qty"],
-    "Status"
-] = "✅ Can Deliver"
-
-next_7_days["Shortage"] = (
-    next_7_days["Qty"]
-    - next_7_days["StockQty"]
+st.metric(
+    "Order Lines",
+    len(next_7_days)
 )
 
-# Filters
-filter_col1, filter_col2 = st.columns(2)
+st.metric(
+    "Total Qty",
+    int(next_7_days["Qty"].sum())
+)
 
-with filter_col1:
+display_df = next_7_days[
+    [
+        "Doc. Date",
+        "Adjusted Target Pack Date",
+        "Material",
+        "Material Description",
+        "Qty"
+    ]
+].copy()
 
-    product_filter = st.radio(
-        "Product Family",
-        ["ALL", "BOND", "PRIME", "PELORIS", "TBE", "OTHER"],
-        horizontal=True
-    )
+display_df.columns = [
+    "Doc Date",
+    "Pack Date",
+    "Material",
+    "Description",
+    "Qty"
+]
 
-with filter_col2:
-
-    status_filter = st.radio(
-        "Delivery Status",
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True
+)
