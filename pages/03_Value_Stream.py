@@ -1,32 +1,32 @@
 import streamlit as st
-import pandas as pd
 import plotly.express as px
 
-from utils.value_stream import classify_product
+from utils.loader import load_backlog
+from utils.value_stream import classify_value_stream
 
 st.title("Value Stream Dashboard")
 
-df = pd.read_excel(
-    "data/ZVREP386.xlsx"
-)
+df = load_backlog()
 
 df["Value Stream"] = df[
     "Material Description"
-].apply(classify_product)
+].apply(
+    classify_value_stream
+)
 
 summary = (
     df.groupby("Value Stream")
-      .agg({
-          "Backlog Value":"sum",
-          "Bklg.Qty":"sum"
-      })
-      .reset_index()
+    .agg({
+        "Backlog Va":"sum",
+        "Bklg.Qty":"sum"
+    })
+    .reset_index()
 )
 
 fig = px.bar(
     summary,
     x="Value Stream",
-    y="Backlog Value",
+    y="Backlog Va",
     color="Value Stream"
 )
 
