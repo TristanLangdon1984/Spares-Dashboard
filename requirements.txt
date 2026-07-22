@@ -1,7 +1,5 @@
-streamlit
-pandas
-plotly
-openpyxl
-numpy
-office365-rest-python-client
+lxml
+html5lib
+beautifulsoup4
 xlrd
+``
