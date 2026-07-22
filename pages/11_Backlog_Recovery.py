@@ -63,10 +63,10 @@ def classify_product(material):
     return "OTHER"
 
 
-# Load Data
+# LOAD DATA
 df = load_backlog()
 
-# Remove Excluded Parts
+# REMOVE EXCLUDED PARTS
 df = df[
     ~df["Material"]
     .astype(str)
@@ -74,7 +74,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Remove C4C Parts
+# REMOVE C4C PARTS
 df = df[
     ~df["Material"]
     .astype(str)
@@ -82,7 +82,7 @@ df = df[
     .isin(C4C_PARTS)
 ]
 
-# Dates
+# DATES
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -99,7 +99,7 @@ df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
 )
 
-# Qty
+# QTY
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -107,7 +107,7 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# Stock
+# STOCK
 df["StockQty"] = pd.to_numeric(
     df["Stock"]
     .astype(str)
@@ -115,33 +115,32 @@ df["StockQty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# Product Family
+# PRODUCT FAMILY
 df["Product"] = df["Material"].apply(
     classify_product
 )
 
+# STATUS
+df["Status"] = "❌ Short"
+
+df.loc[
+    df["StockQty"] >= df["Qty"],
+    "Status"
+] = "✅ Can Deliver"
+
+df["Shortage"] = (
+    df["Qty"] - df["StockQty"]
+)
+
 today = pd.Timestamp.today().normalize()
 
-# Backlog = anything before today
+# BACKLOG
 backlog = df[
     df["Adjusted Target Pack Date"].dt.normalize()
     < today
 ].copy()
 
-# Delivery Status
-backlog["Status"] = "❌ Short"
-
-backlog.loc[
-    backlog["StockQty"] >= backlog["Qty"],
-    "Status"
-] = "✅ Can Deliver"
-
-backlog["Shortage"] = (
-    backlog["Qty"]
-    - backlog["StockQty"]
-)
-
-# Filters
+# FILTERS
 filter_col1, filter_col2 = st.columns(2)
 
 with filter_col1:
@@ -171,6 +170,8 @@ with filter_col2:
         horizontal=True
     )
 
+# APPLY FILTERS
+
 if product_filter != "ALL":
 
     backlog = backlog[
@@ -183,7 +184,7 @@ if status_filter != "ALL":
         backlog["Status"] == status_filter
     ]
 
-# KPI Cards
+# KPI CARDS
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric(
@@ -228,7 +229,7 @@ c6.metric(
     )
 )
 
-# Display Table
+# TABLE
 display_df = backlog[
     [
         "Doc. Date",
