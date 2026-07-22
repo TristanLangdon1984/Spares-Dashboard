@@ -37,20 +37,16 @@ def classify_product(material):
     if material.startswith("S091.") or material.startswith("91."):
         return "PRIME"
 
-    if (
-        material.startswith("S21.")
-        or material.startswith("21.")
-        or material.startswith("S49.")
-        or material.startswith("49.")
-    ):
+    if material.startswith("S21.") or material.startswith("21."):
         return "BOND"
 
-    if (
-        material.startswith("S26.")
-        or material.startswith("26.")
-        or material.startswith("S45.")
-        or material.startswith("45.")
-    ):
+    if material.startswith("S49.") or material.startswith("49."):
+        return "BOND"
+
+    if material.startswith("S26.") or material.startswith("26."):
+        return "PELORIS"
+
+    if material.startswith("S45.") or material.startswith("45."):
         return "PELORIS"
 
     if material.startswith("S33.") or material.startswith("33."):
@@ -69,6 +65,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
+# Dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -79,6 +76,7 @@ df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
 )
 
+# Qty
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -86,6 +84,7 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
+# Product
 df["Product"] = df["Material"].apply(
     classify_product
 )
@@ -95,9 +94,15 @@ today = pd.Timestamp.today().normalize()
 week_end = today + pd.Timedelta(days=7)
 
 next_7_days = df[
-    (df["Adjusted Target Pack Date"].dt.normalize() > today)
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        > today
+    )
     &
-    (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        <= week_end
+    )
 ].copy()
 
 # Product Filter
@@ -113,18 +118,25 @@ if product_filter != "ALL":
         next_7_days["Product"] == product_filter
     ]
 
-st.metric(
+# KPIs
+c1, c2 = st.columns(2)
+
+c1.metric(
     "Order Lines",
     len(next_7_days)
 )
 
-st.metric(
+c2.metric(
     "Total Qty",
     int(next_7_days["Qty"].sum())
 )
 
+# Keep all columns
 display_df = next_7_days.copy()
 
-display_df = display_df.rename(
-    columns={
-
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    height=900
+)
