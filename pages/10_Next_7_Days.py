@@ -1,14 +1,26 @@
 import streamlit as st
 import pandas as pd
 
+from utils.loader import load_backlog
+
 st.title("Next 7 Days")
 
-df = pd.read_excel(
-    "data/zv308dailyRp21072026.xlsx"
+df = load_backlog()
+
+df["PD Eff.Dte"] = pd.to_datetime(
+    df["PD Eff.Dte"],
+    dayfirst=True,
+    errors="coerce"
 )
 
+today = pd.Timestamp.today().normalize()
+
+week_end = today + pd.Timedelta(days=7)
+
 future = df[
-    df["Priority"] == "Next Due"
+    (df["PD Eff.Dte"] > today)
+    &
+    (df["PD Eff.Dte"] <= week_end)
 ]
 
 st.metric(
@@ -17,8 +29,8 @@ st.metric(
 )
 
 st.metric(
-    "Future Qty",
-    future["Qty"].sum()
+    "Qty Due",
+    future["Bklg.Qty"].sum()
 )
 
 st.dataframe(future)
