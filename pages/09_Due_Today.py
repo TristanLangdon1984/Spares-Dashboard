@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
+from config.excluded_parts import EXCLUDED_PARTS
 
 st.set_page_config(
     page_title="Due Today",
@@ -10,8 +11,16 @@ st.set_page_config(
 
 st.title("Due Today")
 
-# Load data
+# Load SAP Backlog
 df = load_backlog()
+
+# Remove excluded materials
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(EXCLUDED_PARTS)
+]
 
 # Convert dates
 df["PD Eff.Dte"] = pd.to_datetime(
@@ -20,7 +29,7 @@ df["PD Eff.Dte"] = pd.to_datetime(
     errors="coerce"
 )
 
-# Convert quantity
+# Convert quantities
 df["Bklg.Qty"] = pd.to_numeric(
     df["Bklg.Qty"],
     errors="coerce"
@@ -72,7 +81,7 @@ with col4:
         f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
     )
 
-# Display table
+# Display data
 display_df = due_today[
     [
         "Doc. Date",
@@ -88,11 +97,10 @@ display_df = due_today[
         "Express De"
     ]
 ].sort_values(
-    by="PD Eff.Dte",
+    by=["PD Eff.Dte", "Material"],
     ascending=True
 )
 
-# Rename headers to make them shorter
 display_df.columns = [
     "Doc Date",
     "RSD",
@@ -109,6 +117,15 @@ display_df.columns = [
 
 st.subheader("Due Today / Overdue Orders")
 
-# Use st.table instead of st.dataframe
-# This removes horizontal scrolling
 st.table(display_df)
+
+st.divider()
+
+with st.expander("Excluded Materials"):
+
+    excluded_df = pd.DataFrame(
+        {"Material": EXCLUDED_PARTS}
+    )
+
+    st.table(excluded_df)
+``
