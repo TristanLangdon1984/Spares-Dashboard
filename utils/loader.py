@@ -6,33 +6,19 @@ MB51_FILE = "data/MB51 - MEL_SPARES.XLS"
 
 def load_backlog():
 
-    try:
-        return pd.read_excel(
-            BACKLOG_FILE,
-            engine="xlrd"
-        )
-
-    except Exception:
-
-        tables = pd.read_html(
-            BACKLOG_FILE
-        )
-
-        return tables[0]
+    return pd.read_csv(
+        BACKLOG_FILE,
+        sep="\t",
+        encoding="utf-16",
+        engine="python"
+    )
 
 
 def load_mb51():
 
-    try:
-        return pd.read_excel(
-            MB51_FILE,
-            engine="xlrd"
-        )
-
-    except Exception:
-
-        tables = pd.read_html(
-            MB51_FILE
-        )
-
-        return tables[0]
+    return pd.read_csv(
+        MB51_FILE,
+        sep="\t",
+        encoding="utf-16",
+        engine="python"
+    )
