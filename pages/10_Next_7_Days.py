@@ -29,6 +29,38 @@ def add_business_days(start_date, business_days):
     return current_date
 
 
+def classify_product(material):
+
+    material = str(material).upper().strip()
+
+    if material.startswith("S091.") or material.startswith("91."):
+        return "PRIME"
+
+    if (
+        material.startswith("S21.")
+        or material.startswith("21.")
+        or material.startswith("S49.")
+        or material.startswith("49.")
+    ):
+        return "BOND"
+
+    if (
+        material.startswith("S26.")
+        or material.startswith("26.")
+        or material.startswith("S45.")
+        or material.startswith("45.")
+    ):
+        return "PELORIS"
+
+    if (
+        material.startswith("S33.")
+        or material.startswith("33.")
+    ):
+        return "TBE"
+
+    return "OTHER"
+
+
 df = load_backlog()
 
 df["Doc. Date"] = pd.to_datetime(
@@ -37,7 +69,9 @@ df["Doc. Date"] = pd.to_datetime(
     errors="coerce"
 )
 
-df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
+df["Adjusted Target Pack Date"] = df[
+    "Doc. Date"
+].apply(
     lambda x: add_business_days(x, 3)
 )
 
@@ -48,45 +82,30 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
+df["Product"] = df["Material"].apply(
+    classify_product
+)
+
 today = pd.Timestamp.today().normalize()
+
 week_end = today + pd.Timedelta(days=7)
 
 next_7_days = df[
-    (df["Adjusted Target Pack Date"].dt.normalize() > today)
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        > today
+    )
     &
-    (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        <= week_end
+    )
 ].copy()
 
-st.metric(
-    "Order Lines",
-    len(next_7_days)
-)
+# Product Filter
 
-st.metric(
-    "Total Qty",
-    int(next_7_days["Qty"].sum())
-)
-
-display_df = next_7_days[
+product_filter = st.radio(
+    "Product Family",
     [
-        "Doc. Date",
-        "Adjusted Target Pack Date",
-        "Material",
-        "Material Description",
-        "Qty"
-    ]
-].copy()
-
-display_df.columns = [
-    "Doc Date",
-    "Pack Date",
-    "Material",
-    "Description",
-    "Qty"
-]
-
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    hide_index=True
-)
+        "ALL",
+        "BOND",
