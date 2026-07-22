@@ -1,27 +1,38 @@
+import streamlit as st
 import pandas as pd
+import plotly.express as px
 
+from utils.value_stream import classify_product
 
-def classify_product(description):
+st.title("Value Stream Dashboard")
 
-    desc = str(description).upper()
+df = pd.read_excel(
+    "data/ZVREP386.xlsx"
+)
 
-    if "PELORIS" in desc:
-        return "PELORIS"
+df["Value Stream"] = df[
+    "Material Description"
+].apply(classify_product)
 
-    if "CER" in desc:
-        return "CER"
+summary = (
+    df.groupby("Value Stream")
+      .agg({
+          "Backlog Value":"sum",
+          "Bklg.Qty":"sum"
+      })
+      .reset_index()
+)
 
-    if "ARC" in desc:
-        return "ARC"
+fig = px.bar(
+    summary,
+    x="Value Stream",
+    y="Backlog Value",
+    color="Value Stream"
+)
 
-    if (
-        "BOND" in desc
-        or "RX" in desc
-        or "PRIME" in desc
-        or "BOND-III" in desc
-        or "BOND III" in desc
-        or "BOND-MAX" in desc
-    ):
-        return "BOND"
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
-    return "OTHER"
+st.dataframe(summary)
