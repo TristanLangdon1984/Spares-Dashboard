@@ -23,7 +23,7 @@ def add_business_days(start_date, business_days):
 
     while days_added < business_days:
 
-        current_date += pd.Timedelta(days=1)
+        current_date = current_date + pd.Timedelta(days=1)
 
         if current_date.weekday() < 5:
             days_added += 1
@@ -68,26 +68,17 @@ df = load_backlog()
 
 # Remove excluded parts
 df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(EXCLUDED_PARTS)
+    ~df["Material"].astype(str).str.strip().isin(EXCLUDED_PARTS)
 ]
 
-# Capture C4C parts
+# Capture C4C
 c4c_df = df[
-    df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(C4C_PARTS)
+    df["Material"].astype(str).str.strip().isin(C4C_PARTS)
 ].copy()
 
 # Remove C4C from operational queue
 df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(C4C_PARTS)
+    ~df["Material"].astype(str).str.strip().isin(C4C_PARTS)
 ]
 
 # Dates
@@ -103,21 +94,17 @@ df["Adjusted Target Pack Date"] = df[
     lambda x: add_business_days(x, 3)
 )
 
-# Qty
+# Quantity
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
     .str.replace(",", ".", regex=False)
 )
 
-df["Qty"] = (
-    pd.to_numeric(
-        df["Qty"],
-        errors="coerce"
-    )
-    .fillna(0)
-    .astype(int)
-)
+df["Qty"] = pd.to_numeric(
+    df["Qty"],
+    errors="coerce"
+).fillna(0).astype(int)
 
 # Stock
 df["StockQty"] = (
@@ -126,28 +113,20 @@ df["StockQty"] = (
     .str.replace(",", ".", regex=False)
 )
 
-df["StockQty"] = (
-    pd.to_numeric(
-        df["StockQty"],
-        errors="coerce"
-    )
-    .fillna(0)
-    .astype(int)
+df["StockQty"] = pd.to_numeric(
+    df["StockQty"],
+    errors="coerce"
+).fillna(0).astype(int)
+
+# Product classification
+df["Product"] = df["Material"].apply(
+    classify_product
 )
 
-# Product Classification
-df["Product"] = (
-    df["Material"]
-    .astype(str)
-    .str.strip()
-    .apply(classify_product)
-)
-
-# Next 7 Days
 today = pd.Timestamp.today().normalize()
-
 week_end = today + pd.Timedelta(days=7)
 
+# Next 7 Days
 next_7_days = df[
     (
         df["Adjusted Target Pack Date"].dt.normalize()
@@ -163,6 +142,44 @@ next_7_days = df[
 # Status
 next_7_days["Status"] = "❌ Short"
 
+mask = (
+    next_7_days["StockQty"]
+    >= next_7_days["Qty"]
+)
+
 next_7_days.loc[
-    next_7_days["StockQty"] >= next_7_days["Qty"],
+    mask,
     "Status"
+] = "✅ Can Deliver"
+
+next_7_days["Shortage"] = (
+    next_7_days["Qty"]
+    - next_7_days["StockQty"]
+)
+
+# Product filter
+product_filter = st.radio(
+    "Product Family",
+    ["ALL", "BOND", "PRIME", "PELORIS", "TBE", "OTHER"],
+    horizontal=True
+)
+
+if product_filter != "ALL":
+
+    next_7_days = next_7_days[
+        next_7_days["Product"] == product_filter
+    ]
+
+# KPIs
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric(
+    "Order Lines",
+    len(next_7_days)
+)
+
+c2.metric(
+    "Total Qty",
+    f"{next_7_days['Qty'].sum():,.0f}"
+)
+
