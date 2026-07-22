@@ -6,12 +6,23 @@ MB51_FILE = "data/MB51 - MEL_SPARES.XLS"
 
 def clean_columns(df):
 
-    df.columns = (
-        df.columns.astype(str)
-        .str.strip()
-        .str.replace("\n", " ", regex=False)
-        .str.replace("\r", " ", regex=False)
-    )
+    cols = []
+
+    for col in df.columns:
+
+        col = str(col)
+
+        col = col.replace("\ufeff", "")
+
+        col = col.replace("ÿþ", "")
+
+        col = "".join(col)
+
+        col = " ".join(col.split())
+
+        cols.append(col)
+
+    df.columns = cols
 
     return df
 
@@ -21,13 +32,11 @@ def load_backlog():
     df = pd.read_csv(
         BACKLOG_FILE,
         sep="\t",
-        encoding="latin1",
+        encoding="utf-16",
         engine="python"
     )
 
-    df = clean_columns(df)
-
-    return df
+    return clean_columns(df)
 
 
 def load_mb51():
@@ -35,10 +44,8 @@ def load_mb51():
     df = pd.read_csv(
         MB51_FILE,
         sep="\t",
-        encoding="latin1",
+        encoding="utf-16",
         engine="python"
     )
 
-    df = clean_columns(df)
-
-    return df
+    return clean_columns(df)
