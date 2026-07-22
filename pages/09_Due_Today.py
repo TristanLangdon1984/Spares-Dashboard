@@ -3,6 +3,11 @@ import pandas as pd
 
 from utils.loader import load_backlog
 
+st.set_page_config(
+    page_title="Due Today",
+    layout="wide"
+)
+
 st.title("Due Today")
 
 # Load data
@@ -15,7 +20,7 @@ df["PD Eff.Dte"] = pd.to_datetime(
     errors="coerce"
 )
 
-# Convert quantities
+# Convert quantity
 df["Bklg.Qty"] = pd.to_numeric(
     df["Bklg.Qty"],
     errors="coerce"
@@ -29,7 +34,7 @@ df["Stock"] = pd.to_numeric(
 
 today = pd.Timestamp.today().normalize()
 
-# Due today and overdue orders
+# Due today and overdue
 due_today = df[
     df["PD Eff.Dte"] <= today
 ].copy()
@@ -67,52 +72,43 @@ with col4:
         f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
     )
 
-# Compact table for planners
+# Display table
 display_df = due_today[
     [
+        "Doc. Date",
+        "RSD",
         "PD Eff.Dte",
+        "Document",
         "Material",
         "Material Description",
         "Bklg.Qty",
         "Stock",
-        "ShipToCtry"
+        "ShipToCtry",
+        "Plnt",
+        "Express De"
     ]
 ].sort_values(
     by="PD Eff.Dte",
     ascending=True
 )
 
+# Rename headers to make them shorter
+display_df.columns = [
+    "Doc Date",
+    "RSD",
+    "Due Date",
+    "Order",
+    "Material",
+    "Description",
+    "Qty",
+    "Stock",
+    "Country",
+    "Plant",
+    "Express"
+]
+
 st.subheader("Due Today / Overdue Orders")
 
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "PD Eff.Dte": st.column_config.DateColumn(
-            "Due Date",
-            width="small"
-        ),
-        "Material": st.column_config.TextColumn(
-            "Material",
-            width="small"
-        ),
-        "Material Description": st.column_config.TextColumn(
-            "Material Description",
-            width="large"
-        ),
-        "Bklg.Qty": st.column_config.NumberColumn(
-            "Qty",
-            width="small"
-        ),
-        "Stock": st.column_config.NumberColumn(
-            "Stock",
-            width="small"
-        ),
-        "ShipToCtry": st.column_config.TextColumn(
-            "Country",
-            width="small"
-        ),
-    },
-    height=900
-)
+# Use st.table instead of st.dataframe
+# This removes horizontal scrolling
+st.table(display_df)
