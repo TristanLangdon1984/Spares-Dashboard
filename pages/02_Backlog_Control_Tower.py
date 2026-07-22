@@ -9,10 +9,10 @@ df = load_metrics()
 
 fig = px.line(
     df,
-    x=df.columns[0],
-    y=df.columns[-4],
+    x="Date",
+    y="Open Lines Remaining",
     markers=True,
-    title="Backlog Trend"
+    title="Open Lines Remaining"
 )
 
 st.plotly_chart(
@@ -20,4 +20,15 @@ st.plotly_chart(
     use_container_width=True
 )
 
-st.dataframe(df.tail(20))
+fig2 = px.line(
+    df,
+    x="Date",
+    y="Late Lines",
+    markers=True,
+    title="Late Lines"
+)
+
+st.plotly_chart(
+    fig2,
+    use_container_width=True
+)
