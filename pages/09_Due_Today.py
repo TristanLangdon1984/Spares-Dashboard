@@ -19,15 +19,84 @@ def add_business_days(start_date, business_days):
         return pd.NaT
 
     current_date = start_date
-    added_days = 0
+    days_added = 0
 
-    while added_days < business_days:
+    while days_added < business_days:
 
-        current_date = current_date + pd.Timedelta(days=1)
+        current_date += pd.Timedelta(days=1)
 
         if current_date.weekday() < 5:
-            added_days += 1
+            days_added += 1
 
     return current_date
 
+
+def classify_product(material):
+
+    material = str(material).upper().strip()
+
+    if material.startswith("S091.") or material.startswith("91."):
+        return "PRIME"
+
+    if (
+        material.startswith("S21.")
+        or material.startswith("21.")
+        or material.startswith("S49.")
+        or material.startswith("49.")
+    ):
+        return "BOND"
+
+    if (
+        material.startswith("S26.")
+        or material.startswith("26.")
+        or material.startswith("S45.")
+        or material.startswith("45.")
+    ):
+        return "PELORIS"
+
+    if (
+        material.startswith("S33.")
+        or material.startswith("33.")
+    ):
+        return "TBE"
+
+    return "OTHER"
+
+
+df = load_backlog()
+
+# Remove excluded materials
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(EXCLUDED_PARTS)
+]
+
+# Remove C4C materials completely
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(C4C_PARTS)
+]
+
+# Dates
+df["Doc. Date"] = pd.to_datetime(
+    df["Doc. Date"],
+    dayfirst=True,
+    errors="coerce"
+)
+
+df["Adjusted Target Pack Date"] = (
+    df["Doc. Date"]
+    .apply(lambda x: add_business_days(x, 3))
+)
+
+# Qty
+df["Qty"] = (
+    df["Bklg.Qty"]
+    .astype(str)
+    .str.replace(",", ".", regex=False)
+)
 
