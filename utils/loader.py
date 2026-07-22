@@ -6,54 +6,57 @@ MB51_FILE = "data/MB51 - MEL_SPARES.XLS"
 
 def clean_columns(df):
 
-    cols = []
-
-    for col in df.columns:
-
-        col = str(col)
-
-        col = col.replace("\ufeff", "")
-        col = col.replace("ÿþ", "")
-        col = col.strip()
-
-        cols.append(col)
-
-    df.columns = cols
+    df.columns = (
+        df.columns.astype(str)
+        .str.replace("\ufeff", "", regex=False)
+        .str.strip()
+    )
 
     return df
 
 
-def read_sap_file(filename):
-
-    try:
-
-        df = pd.read_csv(
-            filename,
-            sep="\t",
-            encoding="utf-16-le",
-            encoding_errors="ignore",
-            engine="python"
-        )
-
-        return clean_columns(df)
-
-    except Exception:
-
-        df = pd.read_csv(
-            filename,
-            sep="\t",
-            encoding="latin1",
-            engine="python"
-        )
-
-        return clean_columns(df)
-
-
 def load_backlog():
 
-    return read_sap_file(BACKLOG_FILE)
+    df = pd.read_csv(
+        BACKLOG_FILE,
+        sep="\t",
+        encoding="utf-16-le",
+        encoding_errors="ignore",
+        engine="python"
+    )
+
+    df = clean_columns(df)
+
+    keep_columns = [
+        "Doc. Date",
+        "RSD",
+        "PD Eff.Dte",
+        "Document",
+        "Material",
+        "Material Description",
+        "Bklg.Qty",
+        "Stock",
+        "ShipToCtry",
+        "Plnt",
+        "Express De"
+    ]
+
+    existing_columns = [
+        col for col in keep_columns
+        if col in df.columns
+    ]
+
+    return df[existing_columns]
 
 
 def load_mb51():
 
-    return read_sap_file(MB51_FILE)
+    df = pd.read_csv(
+        MB51_FILE,
+        sep="\t",
+        encoding="utf-16-le",
+        encoding_errors="ignore",
+        engine="python"
+    )
+
+    return clean_columns(df)
