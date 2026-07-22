@@ -63,10 +63,13 @@ def classify_product(material):
     return "OTHER"
 
 
+# ------------------
 # LOAD DATA
+# ------------------
+
 df = load_backlog()
 
-# REMOVE EXCLUDED PARTS
+# Remove Excluded Parts
 df = df[
     ~df["Material"]
     .astype(str)
@@ -74,7 +77,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# REMOVE C4C PARTS
+# Remove C4C Parts
 df = df[
     ~df["Material"]
     .astype(str)
@@ -82,7 +85,10 @@ df = df[
     .isin(C4C_PARTS)
 ]
 
+# ------------------
 # DATES
+# ------------------
+
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -99,7 +105,10 @@ df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
 )
 
+# ------------------
 # QTY
+# ------------------
+
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -107,7 +116,10 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
+# ------------------
 # STOCK
+# ------------------
+
 df["StockQty"] = pd.to_numeric(
     df["Stock"]
     .astype(str)
@@ -115,12 +127,18 @@ df["StockQty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
+# ------------------
 # PRODUCT FAMILY
+# ------------------
+
 df["Product"] = df["Material"].apply(
     classify_product
 )
 
+# ------------------
 # STATUS
+# ------------------
+
 df["Status"] = "❌ Short"
 
 df.loc[
@@ -132,15 +150,30 @@ df["Shortage"] = (
     df["Qty"] - df["StockQty"]
 )
 
+# ------------------
+# BACKLOG FILTER
+# ------------------
+
 today = pd.Timestamp.today().normalize()
 
-# BACKLOG
+three_months_ago = today - pd.DateOffset(months=3)
+
 backlog = df[
-    df["Adjusted Target Pack Date"].dt.normalize()
-    < today
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        < today
+    )
+    &
+    (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        >= three_months_ago
+    )
 ].copy()
 
-# FILTERS
+# ------------------
+# USER FILTERS
+# ------------------
+
 filter_col1, filter_col2 = st.columns(2)
 
 with filter_col1:
@@ -170,8 +203,6 @@ with filter_col2:
         horizontal=True
     )
 
-# APPLY FILTERS
-
 if product_filter != "ALL":
 
     backlog = backlog[
@@ -184,7 +215,10 @@ if status_filter != "ALL":
         backlog["Status"] == status_filter
     ]
 
-# KPI CARDS
+# ------------------
+# KPIs
+# ------------------
+
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric(
@@ -229,7 +263,10 @@ c6.metric(
     )
 )
 
-# TABLE
+# ------------------
+# DISPLAY TABLE
+# ------------------
+
 display_df = backlog[
     [
         "Doc. Date",
@@ -263,7 +300,10 @@ display_df.columns = [
 ]
 
 display_df = display_df.sort_values(
-    ["Pack Date", "Material"]
+    by=[
+        "Pack Date",
+        "Material"
+    ]
 )
 
 st.subheader("Backlog Recovery")
