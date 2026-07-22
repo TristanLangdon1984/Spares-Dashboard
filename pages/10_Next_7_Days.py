@@ -19,7 +19,6 @@ def add_business_days(start_date, business_days):
         return pd.NaT
 
     current_date = start_date
-
     days_added = 0
 
     while days_added < business_days:
@@ -32,10 +31,10 @@ def add_business_days(start_date, business_days):
     return current_date
 
 
-# Load backlog
+# Load data
 df = load_backlog()
 
-# Excluded materials
+# Exclude materials
 df = df[
     ~df["Material"]
     .astype(str)
@@ -43,7 +42,7 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Extract C4C parts
+# Separate C4C
 c4c_df = df[
     df["Material"]
     .astype(str)
@@ -51,7 +50,6 @@ c4c_df = df[
     .isin(C4C_PARTS)
 ].copy()
 
-# Remove C4C from operational queue
 df = df[
     ~df["Material"]
     .astype(str)
@@ -67,12 +65,11 @@ df["Doc. Date"] = pd.to_datetime(
 )
 
 # Adjusted Pack Date
-df["Adjusted Target Pack Date"] = (
-    df["Doc. Date"]
-    .apply(lambda x: add_business_days(x, 3))
+df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
+    lambda x: add_business_days(x, 3)
 )
 
-# Qty
+# Quantity
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
@@ -105,10 +102,9 @@ df["StockQty"] = (
 )
 
 today = pd.Timestamp.today().normalize()
-
 week_end = today + pd.Timedelta(days=7)
 
-# Next 7 days bucket
+# Next 7 day bucket
 next_7_days = df[
     (
         df["Adjusted Target Pack Date"].dt.normalize()
@@ -116,3 +112,56 @@ next_7_days = df[
     )
     &
     (
+        df["Adjusted Target Pack Date"].dt.normalize()
+        <= week_end
+    )
+].copy()
+
+# Shortage
+next_7_days["Shortage"] = (
+    next_7_days["Qty"]
+    - next_7_days["StockQty"]
+)
+
+# Status
+next_7_days["Status"] = "❌ Short"
+
+next_7_days.loc[
+    next_7_days["StockQty"] >= next_7_days["Qty"],
+    "Status"
+] = "✅ Can Deliver"
+
+# KPIs
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric(
+    "Orders",
+    len(next_7_days)
+)
+
+col2.metric(
+    "Total Qty",
+    f"{next_7_days['Qty'].sum():,.0f}"
+)
+
+col3.metric(
+    "Materials",
+    next_7_days["Material"].nunique()
+)
+
+col4.metric(
+    "Shortage Qty",
+    f"{next_7_days['Shortage'].clip(lower=0).sum():,.0f}"
+)
+
+# Display
+display_df = next_7_days[
+    [
+        "Doc. Date",
+        "Adjusted Target Pack Date",
+        "Document",
+        "Material",
+        "Material Description",
+        "Qty",
+        "StockQty",
+        "Status",
