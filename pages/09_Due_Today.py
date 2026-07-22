@@ -22,14 +22,14 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Dates
+# Convert dates
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
     errors="coerce"
 )
 
-# Quantity conversion
+# Convert quantity
 df["Qty"] = (
     df["Bklg.Qty"]
     .astype(str)
@@ -37,12 +37,16 @@ df["Qty"] = (
     .str.strip()
 )
 
-df["Qty"] = pd.to_numeric(
-    df["Qty"],
-    errors="coerce"
+df["Qty"] = (
+    pd.to_numeric(
+        df["Qty"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
 )
 
-# Stock conversion
+# Convert stock
 df["StockQty"] = (
     df["Stock"]
     .astype(str)
@@ -50,9 +54,13 @@ df["StockQty"] = (
     .str.strip()
 )
 
-df["StockQty"] = pd.to_numeric(
-    df["StockQty"],
-    errors="coerce"
+df["StockQty"] = (
+    pd.to_numeric(
+        df["StockQty"],
+        errors="coerce"
+    )
+    .fillna(0)
+    .astype(int)
 )
 
 today = pd.Timestamp.today().normalize()
@@ -64,8 +72,8 @@ due_today = df[
 
 # Shortages
 due_today["Shortage"] = (
-    due_today["Qty"].fillna(0)
-    - due_today["StockQty"].fillna(0)
+    due_today["Qty"]
+    - due_today["StockQty"]
 )
 
 # KPI row
