@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
+from config.excluded_parts import EXCLUDED_PARTS
 
 st.set_page_config(
     page_title="Next 7 Days",
@@ -60,6 +61,14 @@ def classify_product(material):
 
 df = load_backlog()
 
+# Remove excluded materials
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(EXCLUDED_PARTS)
+]
+
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -91,6 +100,7 @@ next_7_days = df[
     (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
 ].copy()
 
+# Product Filter
 product_filter = st.radio(
     "Product Family",
     ["ALL", "BOND", "PRIME", "PELORIS", "TBE", "OTHER"],
@@ -98,6 +108,7 @@ product_filter = st.radio(
 )
 
 if product_filter != "ALL":
+
     next_7_days = next_7_days[
         next_7_days["Product"] == product_filter
     ]
@@ -116,15 +127,4 @@ display_df = next_7_days.copy()
 
 display_df = display_df.rename(
     columns={
-        "Doc. Date": "Doc Date",
-        "Adjusted Target Pack Date": "Pack Date",
-        "Material Description": "Description"
-    }
-)
-
-st.dataframe(
-    display_df,
-    use_container_width=True,
-    hide_index=True,
-    height=900
 )
