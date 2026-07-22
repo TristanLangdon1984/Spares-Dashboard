@@ -11,8 +11,13 @@ def load_backlog():
             BACKLOG_FILE,
             engine="xlrd"
         )
+
     except Exception:
-        tables = pd.read_html(BACKLOG_FILE)
+
+        tables = pd.read_html(
+            BACKLOG_FILE
+        )
+
         return tables[0]
 
 
@@ -23,7 +28,11 @@ def load_mb51():
             MB51_FILE,
             engine="xlrd"
         )
+
     except Exception:
-        tables = pd.read_html(MB51_FILE)
+
+        tables = pd.read_html(
+            MB51_FILE
+        )
+
         return tables[0]
-``
