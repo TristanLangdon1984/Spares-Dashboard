@@ -52,10 +52,7 @@ def classify_product(material):
     ):
         return "PELORIS"
 
-    if (
-        material.startswith("S33.")
-        or material.startswith("33.")
-    ):
+    if material.startswith("S33.") or material.startswith("33."):
         return "TBE"
 
     return "OTHER"
@@ -69,9 +66,7 @@ df["Doc. Date"] = pd.to_datetime(
     errors="coerce"
 )
 
-df["Adjusted Target Pack Date"] = df[
-    "Doc. Date"
-].apply(
+df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
     lambda x: add_business_days(x, 3)
 )
 
@@ -91,21 +86,45 @@ today = pd.Timestamp.today().normalize()
 week_end = today + pd.Timedelta(days=7)
 
 next_7_days = df[
-    (
-        df["Adjusted Target Pack Date"].dt.normalize()
-        > today
-    )
+    (df["Adjusted Target Pack Date"].dt.normalize() > today)
     &
-    (
-        df["Adjusted Target Pack Date"].dt.normalize()
-        <= week_end
-    )
+    (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
 ].copy()
-
-# Product Filter
 
 product_filter = st.radio(
     "Product Family",
-    [
-        "ALL",
-        "BOND",
+    ["ALL", "BOND", "PRIME", "PELORIS", "TBE", "OTHER"],
+    horizontal=True
+)
+
+if product_filter != "ALL":
+    next_7_days = next_7_days[
+        next_7_days["Product"] == product_filter
+    ]
+
+st.metric(
+    "Order Lines",
+    len(next_7_days)
+)
+
+st.metric(
+    "Total Qty",
+    int(next_7_days["Qty"].sum())
+)
+
+display_df = next_7_days.copy()
+
+display_df = display_df.rename(
+    columns={
+        "Doc. Date": "Doc Date",
+        "Adjusted Target Pack Date": "Pack Date",
+        "Material Description": "Description"
+    }
+)
+
+st.dataframe(
+    display_df,
+    use_container_width=True,
+    hide_index=True,
+    height=900
+)
