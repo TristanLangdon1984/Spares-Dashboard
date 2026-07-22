@@ -308,7 +308,7 @@ if exclude_obsolete:
         ~backlog["Obsolete"]
     ]
 
-# KPIS
+# KPI CARDS
 
 c1, c2, c3, c4, c5, c6, c7, c8 = st.columns(8)
 
@@ -402,11 +402,22 @@ display_df.columns = [
 ]
 
 display_df = display_df.sort_values(
-    by=[
-        "Pack Date",
-        "Material"
-    ]
+    by=["Pack Date", "Material"]
 )
+
+# REMOVE TIME FROM DATES
+
+display_df["Doc Date"] = pd.to_datetime(
+    display_df["Doc Date"]
+).dt.strftime("%d/%m/%Y")
+
+display_df["Pack Date"] = pd.to_datetime(
+    display_df["Pack Date"]
+).dt.strftime("%d/%m/%Y")
+
+display_df["PD Eff Date"] = pd.to_datetime(
+    display_df["PD Eff Date"]
+).dt.strftime("%d/%m/%Y")
 
 st.subheader("Backlog Recovery")
 
