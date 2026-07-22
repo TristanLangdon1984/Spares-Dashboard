@@ -3,6 +3,8 @@ import pandas as pd
 
 from utils.loader import load_backlog
 from config.excluded_parts import EXCLUDED_PARTS
+from config.excluded_keywords import EXCLUDED_KEYWORDS
+from config.excluded_prefixes import EXCLUDED_PREFIXES
 
 st.set_page_config(
     page_title="Due Today",
@@ -14,12 +16,36 @@ st.title("Due Today")
 # Load backlog
 df = load_backlog()
 
-# Remove excluded materials
+# Remove exact material exclusions
 df = df[
     ~df["Material"]
     .astype(str)
     .str.strip()
     .isin(EXCLUDED_PARTS)
+]
+
+# Remove material prefixes
+for prefix in EXCLUDED_PREFIXES:
+
+    df = df[
+        ~df["Material"]
+        .astype(str)
+        .str.strip()
+        .str.startswith(prefix)
+    ]
+
+# Remove description keywords
+keyword_pattern = "|".join(EXCLUDED_KEYWORDS)
+
+df = df[
+    ~df["Material Description"]
+    .astype(str)
+    .str.upper()
+    .str.contains(
+        keyword_pattern,
+        na=False,
+        regex=True
+    )
 ]
 
 # Convert dates
@@ -43,7 +69,7 @@ df["Stock"] = pd.to_numeric(
 
 today = pd.Timestamp.today().normalize()
 
-# Only show records from the last 3 months
+# Remove anything older than 3 months
 three_months_ago = today - pd.DateOffset(months=3)
 
 df = df[
@@ -88,7 +114,7 @@ with col4:
         f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
     )
 
-# Table
+# Display table
 display_df = due_today[
     [
         "Doc. Date",
@@ -122,7 +148,9 @@ display_df.columns = [
     "Express"
 ]
 
-st.subheader("Due Today / Overdue Orders (Last 3 Months)")
+st.subheader(
+    "Due Today / Overdue Orders (Last 3 Months)"
+)
 
 st.table(display_df)
 
@@ -130,5 +158,19 @@ with st.expander("Excluded Materials"):
     st.table(
         pd.DataFrame(
             {"Material": EXCLUDED_PARTS}
+        )
+    )
+
+with st.expander("Excluded Material Prefixes"):
+    st.table(
+        pd.DataFrame(
+            {"Prefix": EXCLUDED_PREFIXES}
+        )
+    )
+
+with st.expander("Excluded Description Keywords"):
+    st.table(
+        pd.DataFrame(
+            {"Keyword": EXCLUDED_KEYWORDS}
         )
     )
