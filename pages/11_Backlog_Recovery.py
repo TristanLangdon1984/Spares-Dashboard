@@ -17,7 +17,6 @@ st.set_page_config(
 
 st.title("Backlog Recovery")
 
-
 INSTRUMENT_PARTS = [
     "21.2201",
     "21.2821",
@@ -91,9 +90,11 @@ def classify_product(material):
 
 
 # LOAD DATA
+
 df = load_backlog()
 
 # CLEAN MATERIAL
+
 df["Material"] = (
     df["Material"]
     .astype(str)
@@ -101,16 +102,19 @@ df["Material"] = (
 )
 
 # REMOVE EXCLUDED PARTS
+
 df = df[
     ~df["Material"].isin(EXCLUDED_PARTS)
 ]
 
 # REMOVE C4C PARTS
+
 df = df[
     ~df["Material"].isin(C4C_PARTS)
 ]
 
 # REMOVE EXCLUDED PREFIXES
+
 for prefix in EXCLUDED_PREFIXES:
 
     df = df[
@@ -118,6 +122,7 @@ for prefix in EXCLUDED_PREFIXES:
     ]
 
 # DATES
+
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -136,6 +141,7 @@ df["Adjusted Target Pack Date"] = (
 )
 
 # QTY
+
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -144,6 +150,7 @@ df["Qty"] = pd.to_numeric(
 ).fillna(0)
 
 # STOCK
+
 df["StockQty"] = pd.to_numeric(
     df["Stock"]
     .astype(str)
@@ -152,11 +159,13 @@ df["StockQty"] = pd.to_numeric(
 ).fillna(0)
 
 # PRODUCT
+
 df["Product"] = df["Material"].apply(
     classify_product
 )
 
 # STATUS
+
 df["Status"] = "❌ Short"
 
 df.loc[
@@ -165,10 +174,12 @@ df.loc[
 ] = "✅ Can Deliver"
 
 df["Shortage"] = (
-    df["Qty"] - df["StockQty"]
+    df["Qty"]
+    - df["StockQty"]
 )
 
-# INSTRUMENT LOGIC
+# INSTRUMENT ORDERS
+
 instrument_documents = set(
     df.loc[
         df["Material"].isin(INSTRUMENT_PARTS),
@@ -176,11 +187,13 @@ instrument_documents = set(
     ]
 )
 
-df["Instrument"] = df["Document"].isin(
-    instrument_documents
+df["Instrument"] = (
+    df["Document"]
+    .isin(instrument_documents)
 )
 
-# BACKLOG FILTER
+# BACKLOG WINDOW
+
 today = pd.Timestamp.today().normalize()
 
 three_months_ago = today - pd.DateOffset(months=3)
@@ -257,7 +270,8 @@ if exclude_instruments:
         ~backlog["Instrument"]
     ]
 
-# KPIS
+# KPI CARDS
+
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 
 c1.metric(
@@ -277,7 +291,11 @@ c3.metric(
 
 c4.metric(
     "Shortage Qty",
-    int(backlog["Shortage"].clip(lower=0).sum())
+    int(
+        backlog["Shortage"]
+        .clip(lower=0)
+        .sum()
+    )
 )
 
 c5.metric(
@@ -300,15 +318,14 @@ c6.metric(
 
 c7.metric(
     "Instrument Orders",
-    backlog["Document"].nunique()
-    if instrument_only
-    else backlog.loc[
+    backlog.loc[
         backlog["Instrument"],
         "Document"
     ].nunique()
 )
 
 # TABLE
+
 display_df = backlog[
     [
         "Doc. Date",
