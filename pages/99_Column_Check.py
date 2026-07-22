@@ -1,11 +1,12 @@
 import streamlit as st
-from pathlib import Path
 
-st.write("Current Folder")
-st.write(Path.cwd())
+try:
+    import utils.file_loader as fl
 
-st.write("Utils Exists?")
-st.write(Path("utils").exists())
+    st.success("file_loader imported successfully")
 
-if Path("utils").exists():
-    st.write(list(Path("utils").glob("*")))
+    st.write(dir(fl))
+
+except Exception as e:
+
+    st.error(str(e))
