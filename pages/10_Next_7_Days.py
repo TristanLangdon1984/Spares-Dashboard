@@ -3,6 +3,7 @@ import pandas as pd
 
 from utils.loader import load_backlog
 from config.excluded_parts import EXCLUDED_PARTS
+from config.c4c_parts import C4C_PARTS
 
 st.set_page_config(
     page_title="Next 7 Days",
@@ -65,6 +66,14 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
+# Remove C4C materials
+df = df[
+    ~df["Material"]
+    .astype(str)
+    .str.strip()
+    .isin(C4C_PARTS)
+]
+
 # Dates
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
@@ -94,15 +103,9 @@ today = pd.Timestamp.today().normalize()
 week_end = today + pd.Timedelta(days=7)
 
 next_7_days = df[
-    (
-        df["Adjusted Target Pack Date"].dt.normalize()
-        > today
-    )
+    (df["Adjusted Target Pack Date"].dt.normalize() > today)
     &
-    (
-        df["Adjusted Target Pack Date"].dt.normalize()
-        <= week_end
-    )
+    (df["Adjusted Target Pack Date"].dt.normalize() <= week_end)
 ].copy()
 
 # Product Filter
@@ -131,8 +134,16 @@ c2.metric(
     int(next_7_days["Qty"].sum())
 )
 
-# Keep all columns
+# Display
 display_df = next_7_days.copy()
+
+display_df = display_df.rename(
+    columns={
+        "Doc. Date": "Doc Date",
+        "Adjusted Target Pack Date": "Pack Date",
+        "Material Description": "Description"
+    }
+)
 
 st.dataframe(
     display_df,
