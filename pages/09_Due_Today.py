@@ -19,3 +19,8 @@ st.write(df["Bklg.Qty"].dtype)
 st.write("Unique Sample Values")
 st.write(df["Bklg.Qty"].dropna().head(50).tolist())
 
+st.write(
+    df[
+        ["Material", "Bklg.Qty"]
+    ].head(20)
+)
