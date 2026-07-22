@@ -10,13 +10,22 @@ st.set_page_config(
 
 st.title("Due Today")
 
+# Load data
 df = load_backlog()
 
-# Clean data
+# Convert date column
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
     errors="coerce"
+)
+
+# Clean quantity column
+df["Bklg.Qty"] = (
+    df["Bklg.Qty"]
+    .astype(str)
+    .str.replace(",", "", regex=False)
+    .str.extract(r"([-]?\d*\.?\d+)")[0]
 )
 
 df["Bklg.Qty"] = pd.to_numeric(
@@ -24,36 +33,34 @@ df["Bklg.Qty"] = pd.to_numeric(
     errors="coerce"
 )
 
+# Clean stock column
+df["Stock"] = (
+    df["Stock"]
+    .astype(str)
+    .str.replace(",", "", regex=False)
+    .str.extract(r"([-]?\d*\.?\d+)")[0]
+)
+
 df["Stock"] = pd.to_numeric(
     df["Stock"],
     errors="coerce"
 )
 
+# Today's date
 today = pd.Timestamp.today().normalize()
 
-# Due today and overdue
+# Due today or overdue
 due_today = df[
     df["PD Eff.Dte"] <= today
 ].copy()
 
-# KPIs
-col1, col2, col3 = st.columns(3)
+# Calculate shortages
+due_today["Shortage"] = (
+    due_today["Bklg.Qty"].fillna(0)
+    - due_today["Stock"].fillna(0)
+)
+
+# KPI Row
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(
-        "Order Lines Due",
-        len(due_today)
-    )
-
-with col2:
-    st.metric(
-        "Backlog Qty",
-        f"{due_today['Bklg.Qty'].fillna(0).sum():,.0f}"
-    )
-
-with col3:
-    st.metric(
-        "Materials",
-        due_today["Material"].nunique()
-    )
-
