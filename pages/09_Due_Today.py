@@ -76,9 +76,9 @@ df = df[
     df["PD Eff.Dte"] >= three_months_ago
 ]
 
-# Due today and overdue
+# Due today only
 due_today = df[
-    df["PD Eff.Dte"] <= today
+    df["PD Eff.Dte"].dt.normalize() == today
 ].copy()
 
 # Shortage calculation
