@@ -2,15 +2,8 @@ import streamlit as st
 import pandas as pd
 
 from utils.loader import load_backlog
-from config.excluded_parts import EXCLUDED_PARTS
-from config.c4c_parts import C4C_PARTS
 
-st.set_page_config(
-    page_title="Next 7 Days",
-    layout="wide"
-)
-
-st.title("Next 7 Days")
+st.title("Next 7 Days Debug")
 
 
 def add_business_days(start_date, business_days):
@@ -35,14 +28,12 @@ def classify_product(material):
 
     material = str(material).upper().strip()
 
-    # PRIME
     if (
         material.startswith("S091.")
         or material.startswith("91.")
     ):
         return "PRIME"
 
-    # BOND
     if (
         material.startswith("S21.")
         or material.startswith("21.")
@@ -51,7 +42,6 @@ def classify_product(material):
     ):
         return "BOND"
 
-    # PELORIS
     if (
         material.startswith("S26.")
         or material.startswith("26.")
@@ -60,7 +50,6 @@ def classify_product(material):
     ):
         return "PELORIS"
 
-    # TBE
     if (
         material.startswith("S33.")
         or material.startswith("33.")
@@ -70,3 +59,28 @@ def classify_product(material):
     return "OTHER"
 
 
+df = load_backlog()
+
+df["Product"] = df["Material"].apply(
+    classify_product
+)
+
+st.write("Product Counts")
+
+st.dataframe(
+    df["Product"]
+    .value_counts()
+    .reset_index()
+)
+
+st.write("Sample Materials")
+
+st.dataframe(
+    df[
+        [
+            "Material",
+            "Material Description",
+            "Product"
+        ]
+    ].head(100)
+)
