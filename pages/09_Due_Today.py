@@ -22,26 +22,33 @@ df = df[
     .isin(EXCLUDED_PARTS)
 ]
 
-# Date conversion
+# Convert dates
 df["PD Eff.Dte"] = pd.to_datetime(
     df["PD Eff.Dte"],
     dayfirst=True,
     errors="coerce"
 )
 
-# Quantity conversion
+# Convert quantity
 df["Bklg.Qty"] = pd.to_numeric(
     df["Bklg.Qty"],
     errors="coerce"
 )
 
-# Stock conversion
+# Convert stock
 df["Stock"] = pd.to_numeric(
     df["Stock"],
     errors="coerce"
 )
 
 today = pd.Timestamp.today().normalize()
+
+# Only show records from the last 3 months
+three_months_ago = today - pd.DateOffset(months=3)
+
+df = df[
+    df["PD Eff.Dte"] >= three_months_ago
+]
 
 # Due today and overdue
 due_today = df[
@@ -81,6 +88,7 @@ with col4:
         f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
     )
 
+# Table
 display_df = due_today[
     [
         "Doc. Date",
@@ -114,7 +122,7 @@ display_df.columns = [
     "Express"
 ]
 
-st.subheader("Due Today / Overdue Orders")
+st.subheader("Due Today / Overdue Orders (Last 3 Months)")
 
 st.table(display_df)
 
