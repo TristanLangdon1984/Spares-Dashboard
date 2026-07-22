@@ -14,16 +14,7 @@ df["PD Eff.Dte"] = pd.to_datetime(
 )
 
 df["Bklg.Qty"] = pd.to_numeric(
-    df["Bklg.Qty"]
-        .astype(str)
-        .str.replace(",", ""),
-    errors="coerce"
-)
-
-df["Backlog Va"] = pd.to_numeric(
-    df["Backlog Va"]
-        .astype(str)
-        .str.replace(",", ""),
+    df["Bklg.Qty"],
     errors="coerce"
 )
 
@@ -33,30 +24,31 @@ due_today = df[
     df["PD Eff.Dte"] <= today
 ]
 
-st.metric(
-    "Lines Due",
+c1, c2 = st.columns(2)
+
+c1.metric(
+    "Order Lines Due",
     len(due_today)
 )
 
-st.metric(
+c2.metric(
     "Backlog Qty",
-    int(due_today["Bklg.Qty"].sum())
-)
-
-st.metric(
-    "Backlog Value",
-    f"${due_today['Backlog Va'].sum():,.0f}"
+    int(due_today["Bklg.Qty"].fillna(0).sum())
 )
 
 st.dataframe(
     due_today[
         [
+            "Document",
             "Material",
             "Material Description",
             "Bklg.Qty",
             "Stock",
-            "Customer name",
-            "PD Eff.Dte"
+            "ShipToCtry",
+            "Plnt",
+            "PD Eff.Dte",
+            "Express De"
         ]
-    ]
+    ],
+    use_container_width=True
 )
