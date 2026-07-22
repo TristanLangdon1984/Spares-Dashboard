@@ -14,7 +14,7 @@ st.title("Due Today")
 # Load data
 df = load_backlog()
 
-# Exclude materials
+# Remove excluded materials
 df = df[
     ~df["Material"]
     .astype(str)
@@ -70,13 +70,22 @@ due_today = df[
     df["PD Eff.Dte"].dt.normalize() == today
 ].copy()
 
-# Shortages
+# Shortage
 due_today["Shortage"] = (
     due_today["Qty"]
     - due_today["StockQty"]
 )
 
-# KPI row
+# Delivery Status
+due_today["Status"] = due_today.apply(
+    lambda row: "✅ Can Deliver"
+    if row["StockQty"] >= row["Qty"]
+    else "❌ Short"
+    ,
+    axis=1
+)
+
+# KPIs
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric(
@@ -94,44 +103,3 @@ col3.metric(
     due_today["Material"].nunique()
 )
 
-col4.metric(
-    "Shortage Qty",
-    f"{due_today['Shortage'].clip(lower=0).sum():,.0f}"
-)
-
-# Display table
-display_df = due_today[
-    [
-        "Doc. Date",
-        "RSD",
-        "PD Eff.Dte",
-        "Document",
-        "Material",
-        "Material Description",
-        "Qty",
-        "StockQty",
-        "ShipToCtry",
-        "Plnt",
-        "Express De"
-    ]
-].sort_values(
-    by="PD Eff.Dte"
-)
-
-display_df.columns = [
-    "Doc Date",
-    "RSD",
-    "Due Date",
-    "Order",
-    "Material",
-    "Description",
-    "Qty",
-    "Stock",
-    "Country",
-    "Plant",
-    "Express"
-]
-
-st.subheader("Due Today")
-
-st.table(display_df)
