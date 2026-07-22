@@ -38,19 +38,26 @@ def classify_product(material):
     if material.startswith("S091.") or material.startswith("91."):
         return "PRIME"
 
-    if material.startswith("S21.") or material.startswith("21."):
+    if (
+        material.startswith("S21.")
+        or material.startswith("21.")
+        or material.startswith("S49.")
+        or material.startswith("49.")
+    ):
         return "BOND"
 
-    if material.startswith("S49.") or material.startswith("49."):
-        return "BOND"
-
-    if material.startswith("S26.") or material.startswith("26."):
+    if (
+        material.startswith("S26.")
+        or material.startswith("26.")
+        or material.startswith("S45.")
+        or material.startswith("45.")
+    ):
         return "PELORIS"
 
-    if material.startswith("S45.") or material.startswith("45."):
-        return "PELORIS"
-
-    if material.startswith("S33.") or material.startswith("33."):
+    if (
+        material.startswith("S33.")
+        or material.startswith("33.")
+    ):
         return "TBE"
 
     return "OTHER"
@@ -115,13 +122,13 @@ df["Product"] = df["Material"].apply(
 
 today = pd.Timestamp.today().normalize()
 
-# Backlog
+# Backlog = anything before today
 backlog = df[
     df["Adjusted Target Pack Date"].dt.normalize()
     < today
 ].copy()
 
-# Status
+# Delivery Status
 backlog["Status"] = "❌ Short"
 
 backlog.loc[
