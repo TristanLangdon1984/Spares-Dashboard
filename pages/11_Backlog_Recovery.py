@@ -5,6 +5,11 @@ from utils.loader import load_backlog
 from config.excluded_parts import EXCLUDED_PARTS
 from config.c4c_parts import C4C_PARTS
 
+try:
+    from config.excluded_prefixes import EXCLUDED_PREFIXES
+except ImportError:
+    EXCLUDED_PREFIXES = []
+
 st.set_page_config(
     page_title="Backlog Recovery",
     layout="wide"
@@ -63,32 +68,34 @@ def classify_product(material):
     return "OTHER"
 
 
-# ------------------
 # LOAD DATA
-# ------------------
-
 df = load_backlog()
 
-# Remove Excluded Parts
-df = df[
-    ~df["Material"]
+# CLEAN MATERIAL
+df["Material"] = (
+    df["Material"]
     .astype(str)
     .str.strip()
-    .isin(EXCLUDED_PARTS)
-]
+)
 
-# Remove C4C Parts
+# REMOVE EXCLUDED PARTS
 df = df[
-    ~df["Material"]
-    .astype(str)
-    .str.strip()
-    .isin(C4C_PARTS)
+    ~df["Material"].isin(EXCLUDED_PARTS)
 ]
 
-# ------------------
+# REMOVE C4C PARTS
+df = df[
+    ~df["Material"].isin(C4C_PARTS)
+]
+
+# REMOVE EXCLUDED PREFIXES
+for prefix in EXCLUDED_PREFIXES:
+
+    df = df[
+        ~df["Material"].str.startswith(prefix)
+    ]
+
 # DATES
-# ------------------
-
 df["Doc. Date"] = pd.to_datetime(
     df["Doc. Date"],
     dayfirst=True,
@@ -101,14 +108,12 @@ df["PD Eff.Dte"] = pd.to_datetime(
     errors="coerce"
 )
 
-df["Adjusted Target Pack Date"] = df["Doc. Date"].apply(
-    lambda x: add_business_days(x, 3)
+df["Adjusted Target Pack Date"] = (
+    df["Doc. Date"]
+    .apply(lambda x: add_business_days(x, 3))
 )
 
-# ------------------
 # QTY
-# ------------------
-
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -116,10 +121,7 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# ------------------
 # STOCK
-# ------------------
-
 df["StockQty"] = pd.to_numeric(
     df["Stock"]
     .astype(str)
@@ -127,18 +129,12 @@ df["StockQty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-# ------------------
-# PRODUCT FAMILY
-# ------------------
-
+# PRODUCT
 df["Product"] = df["Material"].apply(
     classify_product
 )
 
-# ------------------
 # STATUS
-# ------------------
-
 df["Status"] = "❌ Short"
 
 df.loc[
@@ -150,10 +146,7 @@ df["Shortage"] = (
     df["Qty"] - df["StockQty"]
 )
 
-# ------------------
 # BACKLOG FILTER
-# ------------------
-
 today = pd.Timestamp.today().normalize()
 
 three_months_ago = today - pd.DateOffset(months=3)
@@ -170,10 +163,7 @@ backlog = df[
     )
 ].copy()
 
-# ------------------
-# USER FILTERS
-# ------------------
-
+# FILTERS
 filter_col1, filter_col2 = st.columns(2)
 
 with filter_col1:
@@ -215,10 +205,7 @@ if status_filter != "ALL":
         backlog["Status"] == status_filter
     ]
 
-# ------------------
-# KPIs
-# ------------------
-
+# KPI CARDS
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 c1.metric(
@@ -263,10 +250,7 @@ c6.metric(
     )
 )
 
-# ------------------
-# DISPLAY TABLE
-# ------------------
-
+# TABLE
 display_df = backlog[
     [
         "Doc. Date",
