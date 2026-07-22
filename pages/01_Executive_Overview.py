@@ -1,7 +1,32 @@
 import streamlit as st
-st.title('Executive Overview')
-cols=st.columns(4)
-cols[0].metric('Backlog Value','$405K')
-cols[1].metric('Open Lines','97')
-cols[2].metric('Late Lines','26')
-cols[3].metric('Average Age','10 Days')
+from utils.loader import load_metrics
+
+st.title("Executive Overview")
+
+metrics = load_metrics()
+
+latest = metrics.iloc[-1]
+
+col1,col2,col3,col4 = st.columns(4)
+
+col1.metric(
+    "Late Lines",
+    latest.iloc[1]
+)
+
+col2.metric(
+    "Open Lines",
+    latest.iloc[3]
+)
+
+col3.metric(
+    "Due Next 4 Days",
+    latest.iloc[2]
+)
+
+col4.metric(
+    "Date",
+    str(latest.iloc[0])[:10]
+)
+
+st.dataframe(metrics.tail())
