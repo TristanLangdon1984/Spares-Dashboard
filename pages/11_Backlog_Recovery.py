@@ -1,15 +1,18 @@
 import streamlit as st
-import pandas as pd
 import plotly.express as px
+import pandas as pd
+
+from utils.loader import load_backlog
 
 st.title("Backlog Recovery")
 
-df = pd.read_excel(
-    "data/zv308dailyRp21072026.xlsx"
-)
+df = load_backlog()
 
 backlog = df[
-    df["Priority"] == "Late"
+    df["PastDue"].astype(str).str.contains(
+        "X",
+        na=False
+    )
 ]
 
 st.metric(
@@ -17,19 +20,23 @@ st.metric(
     len(backlog)
 )
 
-st.metric(
-    "Late Qty",
-    backlog["Qty"].sum()
+top = (
+    backlog.groupby(
+        "Material Description"
+    )["Backlog Va"]
+    .sum()
+    .sort_values(
+        ascending=False
+    )
+    .head(20)
 )
 
-fig = px.histogram(
-    backlog,
-    x="Owner"
+fig = px.bar(
+    top,
+    title="Top Backlog Materials"
 )
 
 st.plotly_chart(
     fig,
     use_container_width=True
 )
-
-st.dataframe(backlog)
