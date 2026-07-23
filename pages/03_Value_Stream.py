@@ -256,24 +256,25 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 
 def build_display_df(source_df):
 
-    display_df = source_df[
-
-    display_df.columns = [
-        "Doc Date",
-        "Pack Date",
-        "PD Eff Date",
-        "Order",
+    required_columns = [
+        "Doc. Date",
+        "Adjusted Target Pack Date",
+        "PD Eff.Dte",
+        "Document",
         "Material",
-        "Description",
+        "Material Description",
         "Qty",
-        "Stock",
+        "StockQty",
         "Status",
         "Instrument",
         "Obsolete",
-        "Country",
-        "Plant",
-        "Express"
+        "ShipToCtry",
+        "Plnt"
     ]
+
+    display_df = source_df[
+        required_columns
+    ].copy()
 
     display_df = display_df.sort_values(
         by=[
