@@ -209,4 +209,14 @@ def build_filtered_df():
         .isin(obsolete_documents)
     )
 
+    print(
+    df[
+        [
+            "Bklg.Qty",
+            "Qty",
+            "Stock",
+            "StockQty"
+        ]
+    ].head(20)
+)
     return df
