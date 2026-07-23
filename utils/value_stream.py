@@ -33,7 +33,7 @@ def add_business_days(start_date, business_days):
 
     while days_added < business_days:
 
-        current_date = current_date + pd.Timedelta(days=1)
+        current_date += pd.Timedelta(days=1)
 
         if current_date.weekday() < 5:
             days_added += 1
@@ -51,7 +51,7 @@ def subtract_business_days(start_date, business_days):
 
     while days_removed < business_days:
 
-        current_date = current_date - pd.Timedelta(days=1)
+        current_date -= pd.Timedelta(days=1)
 
         if current_date.weekday() < 5:
             days_removed += 1
@@ -145,9 +145,7 @@ def build_filtered_df():
         lambda x: add_business_days(x, 3)
     )
 
-    df["Adjusted Target Pack Date"] = (
-        initial_pack_date
-    )
+    df["Adjusted Target Pack Date"] = initial_pack_date
 
     date_gap = (
         df["PD Eff.Dte"]
@@ -167,16 +165,12 @@ def build_filtered_df():
     )
 
     df["Qty"] = pd.to_numeric(
-        df["Bklg.Qty"]
-        .astype(str)
-        .str.replace(",", ".", regex=False),
+        df["Bklg.Qty"],
         errors="coerce"
     ).fillna(0)
 
     df["StockQty"] = pd.to_numeric(
-        df["Stock"]
-        .astype(str)
-        .str.replace(",", ".", regex=False),
+        df["Stock"],
         errors="coerce"
     ).fillna(0)
 
@@ -193,9 +187,7 @@ def build_filtered_df():
 
     instrument_documents = set(
         df.loc[
-            df["Material"].isin(
-                INSTRUMENT_PARTS
-            ),
+            df["Material"].isin(INSTRUMENT_PARTS),
             "Document"
         ]
     )
@@ -207,9 +199,7 @@ def build_filtered_df():
 
     obsolete_documents = set(
         df.loc[
-            df["Material"].isin(
-                OBSOLETE_PARTS
-            ),
+            df["Material"].isin(OBSOLETE_PARTS),
             "Document"
         ]
     )
