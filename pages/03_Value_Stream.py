@@ -626,9 +626,72 @@ with tab5:
             )
         )
 
+        st.write("### Shortage Summary")
+
         st.dataframe(
             shortage_summary,
             width="stretch",
             hide_index=True,
-            height=900
+            height=400
+        )
+
+        st.divider()
+
+        selected_material = st.selectbox(
+            "Select Material for Order Detail",
+            shortage_summary["Material"].tolist()
+        )
+
+        material_detail = shortage_df[
+            shortage_df["Material"]
+            == selected_material
+        ].copy()
+
+        detail_df = material_detail[
+            [
+                "Document",
+                "Material",
+                "Material Description",
+                "ShipToCtry",
+                "Qty",
+                "StockQty",
+                "Adjusted Target Pack Date",
+                "PD Eff.Dte",
+                "Status"
+            ]
+        ].copy()
+
+        detail_df.columns = [
+            "Order",
+            "Material",
+            "Description",
+            "Country",
+            "Qty",
+            "Stock",
+            "Pack Date",
+            "PD Eff Date",
+            "Status"
+        ]
+
+        detail_df["Pack Date"] = pd.to_datetime(
+            detail_df["Pack Date"],
+            errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+
+        detail_df["PD Eff Date"] = pd.to_datetime(
+            detail_df["PD Eff Date"],
+            errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+
+        detail_df = detail_df.fillna("")
+
+        st.write(
+            f"### Orders Impacted by {selected_material}"
+        )
+
+        st.dataframe(
+            detail_df,
+            width="stretch",
+            hide_index=True,
+            height=600
         )
