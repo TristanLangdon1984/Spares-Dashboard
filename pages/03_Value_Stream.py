@@ -431,12 +431,13 @@ k4.metric(
     len(future_orders)
 )
 
-tab1, tab2, tab3, tab4 = st.tabs(
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "Due Today",
         "Next 7 Days",
         "Backlog Recovery",
-        "Future Orders"
+        "Future Orders",
+        "Shortage Review"
     ]
 )
 
@@ -564,3 +565,70 @@ with tab4:
         hide_index=True,
         height=900
     )
+with tab5:
+
+    st.subheader("Shortage Review")
+
+    shortage_df = filtered_df[
+        filtered_df["Status"] == "❌ Short"
+    ].copy()
+
+    if len(shortage_df) == 0:
+
+        st.success("No shortages found")
+
+    else:
+
+        shortage_summary = (
+            shortage_df
+            .groupby(
+                [
+                    "Material",
+                    "Material Description"
+                ],
+                as_index=False
+            )
+            .agg(
+                Orders=("Document", "nunique"),
+                Total_Qty=("Qty", "sum"),
+                Stock=("StockQty", "max")
+            )
+        )
+
+        shortage_summary["Shortage"] = (
+            shortage_summary["Total_Qty"]
+            - shortage_summary["Stock"]
+        )
+
+        shortage_summary = shortage_summary.sort_values(
+            by="Shortage",
+            ascending=False
+        )
+
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric(
+            "Short Materials",
+            shortage_summary["Material"].nunique()
+        )
+
+        c2.metric(
+            "Affected Orders",
+            shortage_df["Document"].nunique()
+        )
+
+        c3.metric(
+            "Total Shortage Qty",
+            int(
+                shortage_summary["Shortage"]
+                .clip(lower=0)
+                .sum()
+            )
+        )
+
+        st.dataframe(
+            shortage_summary,
+            width="stretch",
+            hide_index=True,
+            height=900
+        )
