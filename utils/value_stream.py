@@ -164,21 +164,27 @@ def build_filtered_df():
         lambda x: subtract_business_days(x, 3)
     )
 
-    # FIXED QUANTITY CONVERSION
+    # SAP quantities 1,000 = 1
 
-    df["Qty"] = pd.to_numeric(
-        df["Bklg.Qty"]
-        .astype(str)
-        .str.replace(",", "", regex=False),
-        errors="coerce"
-    ).fillna(0)
+    df["Qty"] = (
+        pd.to_numeric(
+            df["Bklg.Qty"]
+            .astype(str)
+            .str.replace(",", ".", regex=False),
+            errors="coerce"
+        ).fillna(0)
+        / 1000
+    )
 
-    df["StockQty"] = pd.to_numeric(
-        df["Stock"]
-        .astype(str)
-        .str.replace(",", "", regex=False),
-        errors="coerce"
-    ).fillna(0)
+    df["StockQty"] = (
+        pd.to_numeric(
+            df["Stock"]
+            .astype(str)
+            .str.replace(",", ".", regex=False),
+            errors="coerce"
+        ).fillna(0)
+        / 1000
+    )
 
     df["Product"] = df["Material"].apply(
         classify_product
