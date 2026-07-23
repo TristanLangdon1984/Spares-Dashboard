@@ -314,14 +314,12 @@ def build_display_df(source_df):
         errors="coerce"
     ).dt.strftime("%d/%m/%Y")
 
-    display_df = display_df.fillna("")
-display_df = display_df.fillna("")
-
-for col in display_df.columns:
-    display_df[col] = display_df[col].astype(str)
-
     
-    return display_df
+ddisplay_df = display_df.fillna("")
+
+display_df = display_df.astype(str)
+
+return display_df
 
 with tab1:
 
