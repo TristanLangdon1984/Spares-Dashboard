@@ -277,10 +277,11 @@ def build_display_df(source_df):
     ].copy()
 
     display_df = display_df.sort_values(
-        by=[
-            "Pack Date",
-            "Material"
-        ]
+    by=[
+        "Adjusted Target Pack Date",
+        "Material"
+    ]
+)
     )
 
     display_df["Doc Date"] = pd.to_datetime(
