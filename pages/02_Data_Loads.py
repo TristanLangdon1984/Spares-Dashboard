@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from pathlib import Path
 
 st.set_page_config(
@@ -9,7 +8,6 @@ st.set_page_config(
 
 st.title("Data Loads")
 
-# Create data folder if missing
 data_dir = Path("data")
 data_dir.mkdir(exist_ok=True)
 
@@ -21,63 +19,46 @@ st.subheader("301 Daily")
 
 daily_file = st.file_uploader(
     "Upload 301 Daily File",
-    type=["xlsx", "xls", "csv"],
+    type=["xls", "xlsx", "csv"],
     key="daily"
 )
 
-if daily_file:
+if daily_file is not None:
 
     try:
 
-        if daily_file.name.lower().endswith(".csv"):
-
-            daily_df = pd.read_csv(daily_file)
-
-        else:
-
-            daily_df = pd.read_excel(
-                daily_file
-            )
-
         output_file = (
             data_dir /
-            "301daily.xlsx"
+            "ZVREP386 - 3013BACKLOG1.XLS"
         )
 
-        daily_df.to_excel(
+        with open(
             output_file,
-            index=False
-        )
+            "wb"
+        ) as f:
 
-        c1, c2 = st.columns(2)
-
-        c1.metric(
-            "Rows Loaded",
-            f"{len(daily_df):,}"
-        )
-
-        c2.metric(
-            "Columns",
-            len(daily_df.columns)
-        )
+            f.write(
+                daily_file.getbuffer()
+            )
 
         st.success(
-            f"301 Daily saved to {output_file}"
+            f"301 Daily saved successfully: {output_file.name}"
         )
 
-        with st.expander(
-            "Preview"
-        ):
-
-            st.dataframe(
-                daily_df.head(20),
-                use_container_width=True
+        st.metric(
+            "File Size KB",
+            round(
+                len(
+                    daily_file.getbuffer()
+                ) / 1024,
+                1
             )
+        )
 
     except Exception as e:
 
         st.error(
-            f"Error loading file: {e}"
+            f"Error saving file: {e}"
         )
 
 # --------------------------
@@ -90,65 +71,46 @@ st.subheader("MB51")
 
 mb51_file = st.file_uploader(
     "Upload MB51 File",
-    type=["xlsx", "xls", "csv"],
+    type=["xls", "xlsx", "csv"],
     key="mb51"
 )
 
-if mb51_file:
+if mb51_file is not None:
 
     try:
 
-        if mb51_file.name.lower().endswith(".csv"):
-
-            mb51_df = pd.read_csv(
-                mb51_file
-            )
-
-        else:
-
-            mb51_df = pd.read_excel(
-                mb51_file
-            )
-
         output_file = (
             data_dir /
-            "mb51.xlsx"
+            "MB51 - MEL_SPARES.XLS"
         )
 
-        mb51_df.to_excel(
+        with open(
             output_file,
-            index=False
-        )
+            "wb"
+        ) as f:
 
-        c1, c2 = st.columns(2)
-
-        c1.metric(
-            "Rows Loaded",
-            f"{len(mb51_df):,}"
-        )
-
-        c2.metric(
-            "Columns",
-            len(mb51_df.columns)
-        )
+            f.write(
+                mb51_file.getbuffer()
+            )
 
         st.success(
-            f"MB51 saved to {output_file}"
+            f"MB51 saved successfully: {output_file.name}"
         )
 
-        with st.expander(
-            "Preview"
-        ):
-
-            st.dataframe(
-                mb51_df.head(20),
-                use_container_width=True
+        st.metric(
+            "File Size KB",
+            round(
+                len(
+                    mb51_file.getbuffer()
+                ) / 1024,
+                1
             )
+        )
 
     except Exception as e:
 
         st.error(
-            f"Error loading file: {e}"
+            f"Error saving file: {e}"
         )
 
 # --------------------------
@@ -178,8 +140,8 @@ for file in data_dir.glob("*"):
 if files:
 
     st.dataframe(
-        pd.DataFrame(files),
-        use_container_width=True,
+        files,
+        width="stretch",
         hide_index=True
     )
 
