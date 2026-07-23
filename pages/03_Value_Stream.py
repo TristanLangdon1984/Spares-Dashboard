@@ -281,7 +281,7 @@ def build_display_df(source_df):
         "Adjusted Target Pack Date",
         "Material"
     ]
-)
+    )
     )
 
     display_df["Doc Date"] = pd.to_datetime(
