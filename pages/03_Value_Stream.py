@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from utils.loader import load_backlog
+from utils.value_stream import build_filtered_df
 from config.excluded_parts import EXCLUDED_PARTS
 from config.c4c_parts import C4C_PARTS
 from config.obsolete_parts import OBSOLETE_PARTS
@@ -113,7 +113,7 @@ def classify_product(material):
 
 # LOAD DATA
 
-df = load_backlog()
+filtered_df = build_filtered_df()
 
 df["Material"] = (
     df["Material"]
