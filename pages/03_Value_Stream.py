@@ -385,25 +385,110 @@ tab1, tab2, tab3 = st.tabs(
     ]
 )
 
+
+def build_display_df(source_df):
+
+    display_df = source_df[
+        [
+            "Doc. Date",
+            "Adjusted Target Pack Date",
+            "PD Eff.Dte",
+            "Document",
+            "Material",
+            "Material Description",
+            "Qty",
+            "StockQty",
+            "Status",
+            "Instrument",
+            "Obsolete",
+            "ShipToCtry",
+            "Plnt",
+            "Express De"
+        ]
+    ].copy()
+
+    display_df.columns = [
+        "Doc Date",
+        "Pack Date",
+        "PD Eff Date",
+        "Order",
+        "Material",
+        "Description",
+        "Qty",
+        "Stock",
+        "Status",
+        "Instrument",
+        "Obsolete",
+        "Country",
+        "Plant",
+        "Express"
+    ]
+
+    display_df = display_df.sort_values(
+        by=[
+            "Pack Date",
+            "Material"
+        ]
+    )
+
+    display_df["Doc Date"] = pd.to_datetime(
+        display_df["Doc Date"]
+    ).dt.strftime("%d/%m/%Y")
+
+    display_df["Pack Date"] = pd.to_datetime(
+        display_df["Pack Date"]
+    ).dt.strftime("%d/%m/%Y")
+
+    display_df["PD Eff Date"] = pd.to_datetime(
+        display_df["PD Eff Date"]
+    ).dt.strftime("%d/%m/%Y")
+
+    return display_df
+
+
 with tab1:
+
+    st.subheader("Orders Due Today")
+
+    st.metric(
+        "Order Lines",
+        len(due_today)
+    )
+
     st.dataframe(
-        due_today,
+        build_display_df(due_today),
         use_container_width=True,
         hide_index=True,
         height=900
     )
 
 with tab2:
+
+    st.subheader("Orders Due In Next 7 Days")
+
+    st.metric(
+        "Order Lines",
+        len(next_7_days)
+    )
+
     st.dataframe(
-        next_7_days,
+        build_display_df(next_7_days),
         use_container_width=True,
         hide_index=True,
         height=900
     )
 
 with tab3:
+
+    st.subheader("Backlog Recovery")
+
+    st.metric(
+        "Backlog Lines",
+        len(backlog)
+    )
+
     st.dataframe(
-        backlog,
+        build_display_df(backlog),
         use_container_width=True,
         hide_index=True,
         height=900
