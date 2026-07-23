@@ -257,23 +257,6 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 def build_display_df(source_df):
 
     display_df = source_df[
-        [
-            "Doc. Date",
-            "Adjusted Target Pack Date",
-            "PD Eff.Dte",
-            "Document",
-            "Material",
-            "Material Description",
-            "Qty",
-            "StockQty",
-            "Status",
-            "Instrument",
-            "Obsolete",
-            "ShipToCtry",
-            "Plnt",
-            "Express De"
-        ]
-    ].copy()
 
     display_df.columns = [
         "Doc Date",
