@@ -14,6 +14,13 @@ st.title("Value Stream")
 
 df = build_filtered_df()
 
+st.write(
+    df.groupby(
+        ["Status", "DL"],
+        dropna=False
+    ).size()
+)
+
 # GLOBAL FILTERS
 
 f1, f2, f3, f4, f5, f6 = st.columns(6)
