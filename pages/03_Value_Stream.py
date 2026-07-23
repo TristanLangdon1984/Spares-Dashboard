@@ -316,6 +316,67 @@ if exclude_obsolete:
         ~filtered_df["Obsolete"]
     ]
 
+# SEARCH FILTER
+
+s1, s2 = st.columns([1, 2])
+
+with s1:
+
+    search_column = st.selectbox(
+        "Search By",
+        [
+            "Material",
+            "Order",
+            "Description"
+        ]
+    )
+
+with s2:
+
+    search_text = st.text_input(
+        "Search Value"
+    )
+
+if search_text:
+
+    search_text = search_text.strip()
+
+    if search_column == "Material":
+
+        filtered_df = filtered_df[
+            filtered_df["Material"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        ]
+
+    elif search_column == "Order":
+
+        filtered_df = filtered_df[
+            filtered_df["Document"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        ]
+
+    elif search_column == "Description":
+
+        filtered_df = filtered_df[
+            filtered_df["Material Description"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        ]
+
 # DATE BUCKETS
 
 today = pd.Timestamp.today().normalize()
