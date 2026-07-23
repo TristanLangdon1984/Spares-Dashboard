@@ -218,15 +218,6 @@ def build_filtered_df():
         .isin(obsolete_documents)
     )
 
-    print(df[[
-        "Material",
-        "Bklg.Qty",
-        "Stock",
-        "Qty",
-        "StockQty",
-        "Status"
-    ]].head(20))
-    
     print(df["Status"].value_counts())
-
+    
     return df
