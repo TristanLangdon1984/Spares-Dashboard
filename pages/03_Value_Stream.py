@@ -25,7 +25,6 @@ debug_df = (
 )
 
 st.dataframe(debug_df)
-)
 
 # GLOBAL FILTERS
 
