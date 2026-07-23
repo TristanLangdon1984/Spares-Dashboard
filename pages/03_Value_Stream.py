@@ -276,13 +276,28 @@ def build_display_df(source_df):
         required_columns
     ].copy()
 
+display_df.columns = [
+    "Doc Date",
+    "Pack Date",
+    "PD Eff Date",
+    "Order",
+    "Material",
+    "Description",
+    "Qty",
+    "Stock",
+    "Status",
+    "Instrument",
+    "Obsolete",
+    "Country",
+    "Plant"
+]
+
     display_df = display_df.sort_values(
     by=[
         "Adjusted Target Pack Date",
         "Material"
     ]
-    )
-    )
+)
 
     display_df["Doc Date"] = pd.to_datetime(
         display_df["Doc Date"]
