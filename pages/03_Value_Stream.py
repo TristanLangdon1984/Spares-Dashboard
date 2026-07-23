@@ -276,43 +276,47 @@ def build_display_df(source_df):
         required_columns
     ].copy()
 
-display_df.columns = [
-    "Doc Date",
-    "Pack Date",
-    "PD Eff Date",
-    "Order",
-    "Material",
-    "Description",
-    "Qty",
-    "Stock",
-    "Status",
-    "Instrument",
-    "Obsolete",
-    "Country",
-    "Plant"
-]
+    display_df.columns = [
+        "Doc Date",
+        "Pack Date",
+        "PD Eff Date",
+        "Order",
+        "Material",
+        "Description",
+        "Qty",
+        "Stock",
+        "Status",
+        "Instrument",
+        "Obsolete",
+        "Country",
+        "Plant"
+    ]
 
     display_df = display_df.sort_values(
-    by=[
-        "Adjusted Target Pack Date",
-        "Material"
-    ]
-)
+        by=[
+            "Pack Date",
+            "Material"
+        ]
+    )
 
     display_df["Doc Date"] = pd.to_datetime(
-        display_df["Doc Date"]
+        display_df["Doc Date"],
+        errors="coerce"
     ).dt.strftime("%d/%m/%Y")
 
     display_df["Pack Date"] = pd.to_datetime(
-        display_df["Pack Date"]
+        display_df["Pack Date"],
+        errors="coerce"
     ).dt.strftime("%d/%m/%Y")
 
     display_df["PD Eff Date"] = pd.to_datetime(
-        display_df["PD Eff Date"]
+        display_df["PD Eff Date"],
+        errors="coerce"
     ).dt.strftime("%d/%m/%Y")
 
-    return display_df
+    display_df = display_df.fillna("")
 
+    return display_df
 
 with tab1:
 
