@@ -1,92 +1,84 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
 
-from utils.loader import load_backlog
-
-st.title("Value Stream Dashboard")
-
-df = load_backlog()
-
-
-def classify_value_stream(desc):
-
-    desc = str(desc).upper()
-
-    if "PELORIS" in desc:
-        return "PELORIS"
-
-    if "CER" in desc:
-        return "CER"
-
-    if "ARC" in desc:
-        return "ARC"
-
-    if (
-        "BOND" in desc
-        or "PRIME" in desc
-        or "RX" in desc
-    ):
-        return "BOND"
-
-    return "OTHER"
-
-
-df["Value Stream"] = df["Material Description"].apply(
-    classify_value_stream
+st.set_page_config(
+    page_title="Value Stream",
+    layout="wide"
 )
 
-df["Backlog Va"] = pd.to_numeric(
-    df["Backlog Va"]
-        .astype(str)
-        .str.replace(",", ""),
-    errors="coerce"
+st.title("Value Stream")
+
+st.markdown("### Global Filters")
+
+f1, f2, f3, f4, f5 = st.columns(5)
+
+with f1:
+    st.selectbox(
+        "Product Family",
+        [
+            "ALL",
+            "BOND",
+            "PRIME",
+            "PELORIS",
+            "TBE",
+            "DS9800",
+            "TSB",
+            "OTHER"
+        ]
+    )
+
+with f2:
+    st.selectbox(
+        "Delivery Status",
+        [
+            "ALL",
+            "✅ Can Deliver",
+            "❌ Short"
+        ]
+    )
+
+with f3:
+    st.checkbox(
+        "Exclude Instrument Orders"
+    )
+
+with f4:
+    st.checkbox(
+        "Exclude DS9800"
+    )
+
+with f5:
+    st.checkbox(
+        "Exclude Obsolete"
+    )
+
+tab1, tab2, tab3 = st.tabs(
+    [
+        "Due Today",
+        "Next 7 Days",
+        "Backlog Recovery"
+    ]
 )
 
-df["Bklg.Qty"] = pd.to_numeric(
-    df["Bklg.Qty"]
-        .astype(str)
-        .str.replace(",", ""),
-    errors="coerce"
-)
+with tab1:
 
-summary = (
-    df.groupby("Value Stream")
-      .agg({
-          "Backlog Va": "sum",
-          "Bklg.Qty": "sum"
-      })
-      .reset_index()
-)
+    st.subheader("Due Today")
 
-c1, c2, c3 = st.columns(3)
+    st.info(
+        "Due Today content will go here"
+    )
 
-c1.metric(
-    "Total Backlog Value",
-    f"${summary['Backlog Va'].sum():,.0f}"
-)
+with tab2:
 
-c2.metric(
-    "Total Backlog Qty",
-    f"{summary['Bklg.Qty'].sum():,.0f}"
-)
+    st.subheader("Next 7 Days")
 
-c3.metric(
-    "Value Streams",
-    summary["Value Stream"].nunique()
-)
+    st.info(
+        "Next 7 Days content will go here"
+    )
 
-fig = px.bar(
-    summary,
-    x="Value Stream",
-    y="Backlog Va",
-    color="Value Stream",
-    title="Backlog Value by Value Stream"
-)
+with tab3:
 
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
+    st.subheader("Backlog Recovery")
 
-st.dataframe(summary)
+    st.info(
+        "Backlog Recovery content will go here"
+    )
