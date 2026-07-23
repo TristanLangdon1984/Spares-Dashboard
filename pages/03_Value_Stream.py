@@ -110,6 +110,7 @@ if "DL" in filtered_df.columns:
 
     dl_flag = (
         filtered_df["DL"]
+        .fillna("")
         .astype(str)
         .str.upper()
         .str.strip()
