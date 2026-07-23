@@ -27,20 +27,20 @@ def load_backlog():
 
     df = clean_columns(df)
 
-   keep_columns = [
-    "Doc. Date",
-    "RSD",
-    "PD Eff.Dte",
-    "Document",
-    "Material",
-    "Material Description",
-    "Bklg.Qty",
-    "Stock",
-    "ShipToCtry",
-    "Plnt",
-    "Express De",
-    "DL"
-]
+    keep_columns = [
+        "Doc. Date",
+        "RSD",
+        "PD Eff.Dte",
+        "Document",
+        "Material",
+        "Material Description",
+        "Bklg.Qty",
+        "Stock",
+        "ShipToCtry",
+        "Plnt",
+        "Express De",
+        "DL"
+    ]
 
     existing_columns = [
         col
@@ -63,8 +63,6 @@ def load_mb51():
 
     return clean_columns(df)
 
-
-# Compatibility function
 
 def load_metrics():
 
