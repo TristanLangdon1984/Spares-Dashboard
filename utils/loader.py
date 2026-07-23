@@ -39,6 +39,7 @@ def load_backlog():
         "ShipToCtry",
         "Plnt",
         "Express De"
+        "DL"
     ]
 
     existing_columns = [
