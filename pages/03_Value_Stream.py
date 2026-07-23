@@ -401,9 +401,15 @@ backlog = filtered_df[
     )
 ]
 
+future_orders = filtered_df[
+    filtered_df["Adjusted Target Pack Date"]
+    .dt.normalize()
+    > week_end
+].copy()
+
 # KPIS
 
-k1, k2, k3 = st.columns(3)
+k1, k2, k3, k4 = st.columns(4)
 
 k1.metric(
     "Due Today",
@@ -420,11 +426,17 @@ k3.metric(
     len(backlog)
 )
 
-tab1, tab2, tab3 = st.tabs(
+k4.metric(
+    "Future Orders",
+    len(future_orders)
+)
+
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "Due Today",
         "Next 7 Days",
-        "Backlog Recovery"
+        "Backlog Recovery",
+        "Future Orders"
     ]
 )
 
@@ -533,6 +545,22 @@ with tab3:
     st.dataframe(
         build_display_df(backlog),
         use_container_width=True,
+        hide_index=True,
+        height=900
+    )
+
+with tab4:
+
+    st.subheader("Future Orders")
+
+    st.metric(
+        "Order Lines",
+        len(future_orders)
+    )
+
+    st.dataframe(
+        build_display_df(future_orders),
+        width="stretch",
         hide_index=True,
         height=900
     )
