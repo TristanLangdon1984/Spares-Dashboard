@@ -16,7 +16,7 @@ df = build_filtered_df()
 
 # GLOBAL FILTERS
 
-f1, f2, f3, f4, f5 = st.columns(5)
+f1, f2, f3, f4, f5, f6 = st.columns(6)
 
 with f1:
 
@@ -63,6 +63,17 @@ with f5:
         "Exclude Obsolete"
     )
 
+with f6:
+
+    released_filter = st.selectbox(
+        "Released",
+        [
+            "ALL",
+            "✅ Released",
+            "❌ Not Released"
+        ]
+    )
+
 filtered_df = df.copy()
 
 if product_filter != "ALL":
@@ -94,6 +105,27 @@ if exclude_obsolete:
     filtered_df = filtered_df[
         ~filtered_df["Obsolete"]
     ]
+    
+if "DL" in filtered_df.columns:
+
+    dl_flag = (
+        filtered_df["DL"]
+        .astype(str)
+        .str.upper()
+        .str.strip()
+    )
+
+    if released_filter == "✅ Released":
+
+        filtered_df = filtered_df[
+            dl_flag != "X"
+        ]
+
+    elif released_filter == "❌ Not Released":
+
+        filtered_df = filtered_df[
+            dl_flag == "X"
+        ]
 
 # DYNAMIC SEARCH
 
