@@ -215,8 +215,10 @@ def build_filtered_df():
             "Bklg.Qty",
             "Qty",
             "Stock",
-            "StockQty"
+            "StockQty",
+            "Status"
         ]
     ].head(20)
 )
+   
     return df
