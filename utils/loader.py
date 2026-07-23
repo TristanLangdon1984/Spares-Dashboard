@@ -38,7 +38,7 @@ def load_backlog():
         "Stock",
         "ShipToCtry",
         "Plnt",
-        "Express De"
+        "Express De",
         "DL"
     ]
 
