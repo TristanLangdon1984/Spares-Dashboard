@@ -163,3 +163,10 @@ def load_mb51():
     )
 
     return clean_columns(df)
+
+def load_metrics():
+    """
+    Compatibility shim for legacy pages.
+    """
+
+    return load_backlog()
