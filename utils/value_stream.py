@@ -164,30 +164,24 @@ def build_filtered_df():
         lambda x: subtract_business_days(x, 3)
     )
 
-    # SAP quantity format:
+    # SAP quantities
     # 1,000 = 1
     # 2,000 = 2
     # 27,000 = 27
 
-    df["Qty"] = (
-        pd.to_numeric(
-            df["Bklg.Qty"]
-            .astype(str)
-            .str.replace(",", "", regex=False),
-            errors="coerce"
-        ).fillna(0)
-        / 1000
-    )
+    df["Qty"] = pd.to_numeric(
+        df["Bklg.Qty"]
+        .astype(str)
+        .str.replace(",", ".", regex=False),
+        errors="coerce"
+    ).fillna(0)
 
-    df["StockQty"] = (
-        pd.to_numeric(
-            df["Stock"]
-            .astype(str)
-            .str.replace(",", "", regex=False),
-            errors="coerce"
-        ).fillna(0)
-        / 1000
-    )
+    df["StockQty"] = pd.to_numeric(
+        df["Stock"]
+        .astype(str)
+        .str.replace(",", ".", regex=False),
+        errors="coerce"
+    ).fillna(0)
 
     df["Product"] = df["Material"].apply(
         classify_product
@@ -202,9 +196,7 @@ def build_filtered_df():
 
     instrument_documents = set(
         df.loc[
-            df["Material"].isin(
-                INSTRUMENT_PARTS
-            ),
+            df["Material"].isin(INSTRUMENT_PARTS),
             "Document"
         ]
     )
@@ -216,9 +208,7 @@ def build_filtered_df():
 
     obsolete_documents = set(
         df.loc[
-            df["Material"].isin(
-                OBSOLETE_PARTS
-            ),
+            df["Material"].isin(OBSOLETE_PARTS),
             "Document"
         ]
     )
