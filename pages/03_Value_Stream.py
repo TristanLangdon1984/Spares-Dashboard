@@ -2,14 +2,6 @@ import streamlit as st
 import pandas as pd
 
 from utils.value_stream import build_filtered_df
-from config.excluded_parts import EXCLUDED_PARTS
-from config.c4c_parts import C4C_PARTS
-from config.obsolete_parts import OBSOLETE_PARTS
-
-try:
-    from config.excluded_prefixes import EXCLUDED_PREFIXES
-except ImportError:
-    EXCLUDED_PREFIXES = []
 
 st.set_page_config(
     page_title="Value Stream",
@@ -18,105 +10,131 @@ st.set_page_config(
 
 st.title("Value Stream")
 
-INSTRUMENT_PARTS = [
-    "21.2201",
-    "21.2821",
-    "45.0001",
-    "45.0005",
-    "49.0051",
-    "49.1501",
-    "91.0021"
-]
-
-
-def add_business_days(start_date, business_days):
-
-    if pd.isna(start_date):
-        return pd.NaT
-
-    current_date = start_date
-    days_added = 0
-
-    while days_added < business_days:
-
-        current_date = current_date + pd.Timedelta(days=1)
-
-        if current_date.weekday() < 5:
-            days_added += 1
-
-    return current_date
-
-
-def subtract_business_days(start_date, business_days):
-
-    if pd.isna(start_date):
-        return pd.NaT
-
-    current_date = start_date
-    days_removed = 0
-
-    while days_removed < business_days:
-
-        current_date = current_date - pd.Timedelta(days=1)
-
-        if current_date.weekday() < 5:
-            days_removed += 1
-
-    return current_date
-
-
-def classify_product(material):
-
-    material = str(material).upper().strip()
-
-    if material.startswith("B"):
-        return "TSB"
-
-    if (
-        material.startswith("98.")
-        or material.startswith("S98.")
-        or material.startswith("9800")
-        or material.startswith("DS9800")
-    ):
-        return "DS9800"
-
-    if (
-        material.startswith("S091.")
-        or material.startswith("91.")
-    ):
-        return "PRIME"
-
-    if (
-        material.startswith("S21.")
-        or material.startswith("21.")
-        or material.startswith("S49.")
-        or material.startswith("49.")
-    ):
-        return "BOND"
-
-    if (
-        material.startswith("S26.")
-        or material.startswith("26.")
-        or material.startswith("S45.")
-        or material.startswith("45.")
-    ):
-        return "PELORIS"
-
-    if (
-        material.startswith("S33.")
-        or material.startswith("33.")
-    ):
-        return "TBE"
-
-    return "OTHER"
-
 # LOAD DATA
 
 df = build_filtered_df()
 
-base_df = build_filtered_df()
+# GLOBAL FILTERS
 
-filtered_df = base_df.copy()
+f1, f2, f3, f4, f5 = st.columns(5)
+
+with f1:
+
+    product_filter = st.selectbox(
+        "Product Family",
+        [
+            "ALL",
+            "BOND",
+            "PRIME",
+            "PELORIS",
+            "TBE",
+            "DS9800",
+            "TSB",
+            "OTHER"
+        ]
+    )
+
+with f2:
+
+    status_filter = st.selectbox(
+        "Delivery Status",
+        [
+            "ALL",
+            "✅ Can Deliver",
+            "❌ Short"
+        ]
+    )
+
+with f3:
+
+    exclude_instruments = st.checkbox(
+        "Exclude Instrument Orders"
+    )
+
+with f4:
+
+    exclude_ds9800 = st.checkbox(
+        "Exclude DS9800"
+    )
+
+with f5:
+
+    exclude_obsolete = st.checkbox(
+        "Exclude Obsolete"
+    )
+
+filtered_df = df.copy()
+
+if product_filter != "ALL":
+
+    filtered_df = filtered_df[
+        filtered_df["Product"] == product_filter
+    ]
+
+if status_filter != "ALL":
+
+    filtered_df = filtered_df[
+        filtered_df["Status"] == status_filter
+    ]
+
+if exclude_instruments:
+
+    filtered_df = filtered_df[
+        ~filtered_df["Instrument"]
+    ]
+
+if exclude_ds9800:
+
+    filtered_df = filtered_df[
+        filtered_df["Product"] != "DS9800"
+    ]
+
+if exclude_obsolete:
+
+    filtered_df = filtered_df[
+        ~filtered_df["Obsolete"]
+    ]
+
+# DYNAMIC SEARCH
+
+search_text = st.text_input(
+    "Search Material, Order or Description",
+    placeholder="e.g. 21.2201, PM Kit, 50012345..."
+)
+
+if search_text:
+
+    filtered_df = filtered_df[
+        (
+            filtered_df["Material"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        )
+        |
+        (
+            filtered_df["Document"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        )
+        |
+        (
+            filtered_df["Material Description"]
+            .astype(str)
+            .str.contains(
+                search_text,
+                case=False,
+                na=False
+            )
+        )
+    ]
 
 # DATE BUCKETS
 
@@ -124,7 +142,9 @@ today = pd.Timestamp.today().normalize()
 
 week_end = today + pd.Timedelta(days=7)
 
-three_months_ago = today - pd.DateOffset(months=3)
+three_months_ago = (
+    today - pd.DateOffset(months=3)
+)
 
 due_today = filtered_df[
     filtered_df["Adjusted Target Pack Date"]
