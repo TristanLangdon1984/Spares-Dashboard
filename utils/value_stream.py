@@ -164,13 +164,16 @@ def build_filtered_df():
         lambda x: subtract_business_days(x, 3)
     )
 
-    # SAP quantities 1,000 = 1
+    # SAP quantity format:
+    # 1,000 = 1
+    # 2,000 = 2
+    # 27,000 = 27
 
     df["Qty"] = (
         pd.to_numeric(
             df["Bklg.Qty"]
             .astype(str)
-            .str.replace(",", ".", regex=False),
+            .str.replace(",", "", regex=False),
             errors="coerce"
         ).fillna(0)
         / 1000
@@ -180,7 +183,7 @@ def build_filtered_df():
         pd.to_numeric(
             df["Stock"]
             .astype(str)
-            .str.replace(",", ".", regex=False),
+            .str.replace(",", "", regex=False),
             errors="coerce"
         ).fillna(0)
         / 1000
