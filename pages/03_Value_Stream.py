@@ -14,17 +14,11 @@ st.title("Value Stream")
 
 df = build_filtered_df()
 
-debug_df = (
-    df.groupby(
-        ["Status", "DL"],
-        dropna=False
-    )
-    .size()
-    .reset_index(name="Count")
-    .astype(str)
-)
+st.write("Status Counts")
+st.write(df["Status"].value_counts().to_dict())
 
-st.dataframe(debug_df)
+st.write("DL Counts")
+st.write(df["DL"].value_counts(dropna=False).to_dict())
 
 # GLOBAL FILTERS
 
