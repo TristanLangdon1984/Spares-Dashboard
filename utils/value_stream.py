@@ -163,7 +163,6 @@ def build_filtered_df():
     ].apply(
         lambda x: subtract_business_days(x, 3)
     )
-
 df["Qty"] = pd.to_numeric(
     df["Bklg.Qty"]
     .astype(str)
@@ -171,11 +170,7 @@ df["Qty"] = pd.to_numeric(
     errors="coerce"
 ).fillna(0)
 
-    df["StockQty"] = pd.to_numeric(
-        df["Stock"],
-        errors="coerce"
-    ).fillna(0)
-
+    
     df["Product"] = df["Material"].apply(
         classify_product
     )
