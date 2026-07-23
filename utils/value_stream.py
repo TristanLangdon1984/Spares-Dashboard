@@ -166,7 +166,7 @@ def build_filtered_df():
         lambda x: subtract_business_days(x, 3)
     )
 
-     df["Qty"] = pd.to_numeric(
+        df["Qty"] = pd.to_numeric(
         df["Bklg.Qty"]
         .astype(str)
         .str.replace(",", ".", regex=False),
