@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from pathlib import Path
 
 st.set_page_config(
@@ -42,7 +43,13 @@ if daily_file is not None:
             )
 
         st.success(
-            f"301 Daily saved successfully: {output_file.name}"
+            f"""
+301 Daily uploaded successfully
+
+File: {output_file.name}
+
+Uploaded: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M:%S')}
+"""
         )
 
         st.metric(
@@ -94,7 +101,13 @@ if mb51_file is not None:
             )
 
         st.success(
-            f"MB51 saved successfully: {output_file.name}"
+            f"""
+MB51 uploaded successfully
+
+File: {output_file.name}
+
+Uploaded: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M:%S')}
+"""
         )
 
         st.metric(
@@ -127,9 +140,17 @@ files = []
 
 for file in data_dir.glob("*"):
 
+    modified = pd.Timestamp(
+        file.stat().st_mtime,
+        unit="s"
+    )
+
     files.append(
         {
             "File": file.name,
+            "Last Updated": modified.strftime(
+                "%d/%m/%Y %H:%M:%S"
+            ),
             "Size KB": round(
                 file.stat().st_size / 1024,
                 1
@@ -139,8 +160,15 @@ for file in data_dir.glob("*"):
 
 if files:
 
+    files_df = pd.DataFrame(files)
+
+    files_df = files_df.sort_values(
+        by="Last Updated",
+        ascending=False
+    )
+
     st.dataframe(
-        files,
+        files_df,
         width="stretch",
         hide_index=True
     )
