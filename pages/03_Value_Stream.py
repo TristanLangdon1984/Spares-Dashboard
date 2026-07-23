@@ -110,254 +110,13 @@ def classify_product(material):
 
     return "OTHER"
 
-
 # LOAD DATA
 
-filtered_df = build_filtered_df()
+df = build_filtered_df()
 
-df["Material"] = (
-    df["Material"]
-    .astype(str)
-    .str.strip()
-)
+base_df = build_filtered_df()
 
-# REMOVE EXCLUDED
-
-df = df[
-    ~df["Material"].isin(EXCLUDED_PARTS)
-]
-
-df = df[
-    ~df["Material"].isin(C4C_PARTS)
-]
-
-for prefix in EXCLUDED_PREFIXES:
-
-    df = df[
-        ~df["Material"].str.startswith(prefix)
-    ]
-
-# DATES
-
-df["Doc. Date"] = pd.to_datetime(
-    df["Doc. Date"],
-    dayfirst=True,
-    errors="coerce"
-)
-
-df["PD Eff.Dte"] = pd.to_datetime(
-    df["PD Eff.Dte"],
-    dayfirst=True,
-    errors="coerce"
-)
-
-initial_pack_date = df["Doc. Date"].apply(
-    lambda x: add_business_days(x, 3)
-)
-
-df["Adjusted Target Pack Date"] = initial_pack_date
-
-date_gap = (
-    df["PD Eff.Dte"] -
-    initial_pack_date
-).dt.days
-
-needs_replan = date_gap > 2
-
-df.loc[
-    needs_replan,
-    "Adjusted Target Pack Date"
-] = df.loc[
-    needs_replan,
-    "PD Eff.Dte"
-].apply(
-    lambda x: subtract_business_days(x, 3)
-)
-
-# QTY
-
-df["Qty"] = pd.to_numeric(
-    df["Bklg.Qty"]
-    .astype(str)
-    .str.replace(",", ".", regex=False),
-    errors="coerce"
-).fillna(0)
-
-# STOCK
-
-df["StockQty"] = pd.to_numeric(
-    df["Stock"]
-    .astype(str)
-    .str.replace(",", ".", regex=False),
-    errors="coerce"
-).fillna(0)
-
-# PRODUCT
-
-df["Product"] = df["Material"].apply(
-    classify_product
-)
-
-# STATUS
-
-df["Status"] = "❌ Short"
-
-df.loc[
-    df["StockQty"] >= df["Qty"],
-    "Status"
-] = "✅ Can Deliver"
-
-# INSTRUMENTS
-
-instrument_documents = set(
-    df.loc[
-        df["Material"].isin(INSTRUMENT_PARTS),
-        "Document"
-    ]
-)
-
-df["Instrument"] = (
-    df["Document"]
-    .isin(instrument_documents)
-)
-
-# OBSOLETE
-
-obsolete_documents = set(
-    df.loc[
-        df["Material"].isin(OBSOLETE_PARTS),
-        "Document"
-    ]
-)
-
-df["Obsolete"] = (
-    df["Document"]
-    .isin(obsolete_documents)
-)
-
-# GLOBAL FILTERS
-
-f1, f2, f3, f4, f5 = st.columns(5)
-
-with f1:
-
-    product_filter = st.selectbox(
-        "Product Family",
-        [
-            "ALL",
-            "BOND",
-            "PRIME",
-            "PELORIS",
-            "TBE",
-            "DS9800",
-            "TSB",
-            "OTHER"
-        ]
-    )
-
-with f2:
-
-    status_filter = st.selectbox(
-        "Delivery Status",
-        [
-            "ALL",
-            "✅ Can Deliver",
-            "❌ Short"
-        ]
-    )
-
-with f3:
-
-    exclude_instruments = st.checkbox(
-        "Exclude Instrument Orders"
-    )
-
-with f4:
-
-    exclude_ds9800 = st.checkbox(
-        "Exclude DS9800"
-    )
-
-with f5:
-
-    exclude_obsolete = st.checkbox(
-        "Exclude Obsolete"
-    )
-
-filtered_df = df.copy()
-
-if product_filter != "ALL":
-
-    filtered_df = filtered_df[
-        filtered_df["Product"] == product_filter
-    ]
-
-if status_filter != "ALL":
-
-    filtered_df = filtered_df[
-        filtered_df["Status"] == status_filter
-    ]
-
-if exclude_instruments:
-
-    filtered_df = filtered_df[
-        ~filtered_df["Instrument"]
-    ]
-
-if exclude_ds9800:
-
-    filtered_df = filtered_df[
-        filtered_df["Product"] != "DS9800"
-    ]
-
-if exclude_obsolete:
-
-    filtered_df = filtered_df[
-        ~filtered_df["Obsolete"]
-    ]
-
-# DYNAMIC SEARCH
-
-search_text = st.text_input(
-    "Search Material, Order or Description",
-    placeholder="e.g. 21.2201, PM Kit, 50012345..."
-)
-
-if search_text:
-
-    search_text = search_text.strip()
-
-    filtered_df = filtered_df[
-        (
-            filtered_df["Material"]
-            .astype(str)
-            .str.contains(
-                search_text,
-                case=False,
-                na=False
-            )
-        )
-        |
-        (
-            filtered_df["Document"]
-            .astype(str)
-            .str.contains(
-                search_text,
-                case=False,
-                na=False
-            )
-        )
-        |
-        (
-            filtered_df["Material Description"]
-            .astype(str)
-            .str.contains(
-                search_text,
-                case=False,
-                na=False
-            )
-        )
-    ]
+filtered_df = base_df.copy()
 
 # DATE BUCKETS
 
@@ -513,7 +272,7 @@ with tab1:
 
     st.dataframe(
         build_display_df(due_today),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=900
     )
@@ -529,7 +288,7 @@ with tab2:
 
     st.dataframe(
         build_display_df(next_7_days),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=900
     )
@@ -545,7 +304,7 @@ with tab3:
 
     st.dataframe(
         build_display_df(backlog),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=900
     )
