@@ -14,6 +14,10 @@ st.title("Value Stream")
 
 df = build_filtered_df()
 
+st.write("Rows:", len(df))
+st.write("Latest Doc Date:", df["Doc. Date"].max())
+st.write("Latest Order:", df["Document"].astype(str).max())
+
 # GLOBAL FILTERS
 
 f1, f2, f3, f4, f5, f6 = st.columns(6)
