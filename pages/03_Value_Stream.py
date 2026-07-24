@@ -116,11 +116,17 @@ if "DL" in filtered_df.columns:
         .str.strip()
     )
 
-if released_filter == "✅ Released":
+    if released_filter == "✅ Released":
 
-    filtered_df = filtered_df[
-        dl_flag == "X"
-    ]
+        filtered_df = filtered_df[
+            dl_flag == "X"
+        ]
+
+    elif released_filter == "❌ Not Released":
+
+        filtered_df = filtered_df[
+            dl_flag != "X"
+        ]
 
 elif released_filter == "❌ Not Released":
 
