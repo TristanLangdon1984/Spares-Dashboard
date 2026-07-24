@@ -248,17 +248,15 @@ k4.metric(
     len(future_orders)
 )
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "Due Today",
         "Next 7 Days",
         "Backlog Recovery",
-        "Future Orders",
-        "Shortage Review"
+        "Future Orders"
     ]
 )
-
-
+    
 def build_display_df(source_df):
 
     required_columns = [
@@ -388,17 +386,7 @@ with tab4:
         hide_index=True,
         height=900
     )
-with tab5:
 
-    st.subheader("Shortage Review")
-
-    shortage_df = filtered_df[
-        filtered_df["Status"] == "❌ Short"
-    ].copy()
-
-    if len(shortage_df) == 0:
-
-        st.success("No shortages found")
 
     else:
 
