@@ -49,27 +49,47 @@ f1, f2 = st.columns(2)
 
 with f1:
 
-    movement_type = st.selectbox(
-        "Movement Type",
-        ["ALL"] +
-        sorted(
-            df["MvT"].astype(str).unique().tolist()
+    if "MvT" in df.columns:
+
+        movement_types = sorted(
+            df["MvT"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .unique()
+            .tolist()
         )
-        if "MvT" in df.columns
-        else ["ALL"]
-    )
+
+        movement_type = st.selectbox(
+            "Movement Type",
+            ["ALL"] + movement_types
+        )
+
+    else:
+
+        movement_type = "ALL"
 
 with f2:
 
-    plant = st.selectbox(
-        "Plant",
-        ["ALL"] +
-        sorted(
-            df["Plant"].astype(str).unique().tolist()
+    if "Plant" in df.columns:
+
+        plants = sorted(
+            df["Plant"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .unique()
+            .tolist()
         )
-        if "Plant" in df.columns
-        else ["ALL"]
-    )
+
+        plant = st.selectbox(
+            "Plant",
+            ["ALL"] + plants
+        )
+
+    else:
+
+        plant = "ALL"
 
 filtered_df = df.copy()
 
