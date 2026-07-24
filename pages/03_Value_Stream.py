@@ -133,15 +133,16 @@ if "DL" in filtered_df.columns:
     )
 
 if released_filter == "✅ Released":
-   filtered_df = filtered_df[
+
+    filtered_df = filtered_df[
         dl_flag == "X"
     ]
 
 elif released_filter == "❌ Not Released":
+
     filtered_df = filtered_df[
         dl_flag != "X"
     ]
-
 # DYNAMIC SEARCH
 
 search_text = st.text_input(
