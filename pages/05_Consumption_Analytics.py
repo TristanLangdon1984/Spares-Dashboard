@@ -12,6 +12,8 @@ st.title("Consumption Analytics")
 
 df = load_mb51()
 
+st.write(df.columns.tolist())
+
 # ----------------------------
 # DATE CLEANUP
 # ----------------------------
