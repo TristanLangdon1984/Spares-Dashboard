@@ -231,20 +231,20 @@ if "Material" in filtered_df.columns:
     .tolist()
 )
 
-selected_material = st.selectbox(
-    "Select Material",
-    materials_list
-)
-
     selected_material = st.selectbox(
         "Select Material",
         materials_list
     )
-
-    material_df = filtered_df[
-        filtered_df["Material"]
-        .astype(str)
-        == selected_material
+    
+        selected_material = st.selectbox(
+            "Select Material",
+            materials_list
+        )
+    
+        material_df = filtered_df[
+            filtered_df["Material"]
+            .astype(str)
+            == selected_material
     ]
 
     st.dataframe(
