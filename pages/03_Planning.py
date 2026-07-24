@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from utils.value_stream import (
-    build_filtered_df
-)
+from utils.value_stream import build_filtered_df
 
 st.set_page_config(
     page_title="Planning",
@@ -13,6 +11,45 @@ st.set_page_config(
 st.title("Planning")
 
 filtered_df = build_filtered_df()
+
+# --------------------------------
+# RELEASE FILTER
+# --------------------------------
+
+released_filter = st.selectbox(
+    "Released Status",
+    [
+        "ALL",
+        "Released",
+        "Not Released"
+    ]
+)
+
+if "DL" in filtered_df.columns:
+
+    dl_flag = (
+        filtered_df["DL"]
+        .fillna("")
+        .astype(str)
+        .str.upper()
+        .str.strip()
+    )
+
+    if released_filter == "Released":
+
+        filtered_df = filtered_df[
+            dl_flag == "X"
+        ]
+
+    elif released_filter == "Not Released":
+
+        filtered_df = filtered_df[
+            dl_flag != "X"
+        ]
+
+# --------------------------------
+# KPIS
+# --------------------------------
 
 today = pd.Timestamp.today().normalize()
 
@@ -30,18 +67,26 @@ short_orders = len(
     ]
 )
 
-released_orders = len(
+released_orders = 0
+
+if "DL" in filtered_df.columns:
+
+    released_orders = len(
+        filtered_df[
+            dl_flag == "X"
+        ]
+    )
+
+due_today = len(
     filtered_df[
-        filtered_df["DL"]
-        .fillna("")
-        .astype(str)
-        .str.upper()
-        .str.strip()
-        == "X"
+        filtered_df[
+            "Adjusted Target Pack Date"
+        ].dt.normalize()
+        == today
     ]
 )
 
-k1, k2, k3 = st.columns(3)
+k1, k2, k3, k4 = st.columns(4)
 
 k1.metric(
     "Late Orders",
@@ -49,22 +94,30 @@ k1.metric(
 )
 
 k2.metric(
+    "Orders Due Today",
+    due_today
+)
+
+k3.metric(
     "Short Orders",
     short_orders
 )
 
-k3.metric(
+k4.metric(
     "Released Orders",
     released_orders
 )
 
+# --------------------------------
 # TABS
+# --------------------------------
 
-tab1, tab2, tab3 = st.tabs(
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "Shortage Review",
         "Supply Risk",
-        "Future Demand"
+        "Future Demand",
+        "Planner Queue"
     ]
 )
 
@@ -82,7 +135,9 @@ with tab1:
 
     if len(shortage_df) == 0:
 
-        st.success("No shortages found")
+        st.success(
+            "No shortages found"
+        )
 
     else:
 
@@ -98,7 +153,11 @@ with tab1:
             .agg(
                 Orders=("Document", "nunique"),
                 Demand_Qty=("Qty", "sum"),
-                Stock=("StockQty", "max")
+                Stock=("StockQty", "max"),
+                Earliest_Pack_Date=(
+                    "Adjusted Target Pack Date",
+                    "min"
+                )
             )
         )
 
@@ -108,8 +167,7 @@ with tab1:
         )
 
         shortage_summary = shortage_summary.sort_values(
-            by="Shortage_Qty",
-            ascending=False
+            by="Earliest_Pack_Date"
         )
 
         st.dataframe(
@@ -184,20 +242,25 @@ with tab2:
             - supply_risk["Stock"]
         )
 
+        days_to_pack = (
+            supply_risk["Earliest_Pack_Date"]
+            - today
+        ).dt.days
+
         supply_risk["Risk_Level"] = "LOW"
 
         supply_risk.loc[
-            supply_risk["Shortage_Qty"] > 5,
+            days_to_pack <= 14,
             "Risk_Level"
         ] = "MEDIUM"
 
         supply_risk.loc[
-            supply_risk["Shortage_Qty"] > 10,
+            days_to_pack <= 7,
             "Risk_Level"
         ] = "HIGH"
 
         supply_risk.loc[
-            supply_risk["Shortage_Qty"] > 20,
+            days_to_pack <= 3,
             "Risk_Level"
         ] = "CRITICAL"
 
@@ -228,11 +291,9 @@ with tab3:
 
     st.subheader("Future Demand")
 
-    today = pd.Timestamp.today().normalize()
-
     week_end = (
-        today +
-        pd.Timedelta(days=7)
+        today
+        + pd.Timedelta(days=7)
     )
 
     future_orders = filtered_df[
@@ -254,6 +315,7 @@ with tab3:
             future_orders
             .groupby(
                 [
+                    "Product",
                     "Material",
                     "Material Description"
                 ],
@@ -294,3 +356,51 @@ with tab3:
             hide_index=True,
             height=700
         )
+
+# --------------------------------
+# PLANNER QUEUE
+# --------------------------------
+
+with tab4:
+
+    st.subheader(
+        "Planner Queue"
+    )
+
+    planner_df = filtered_df[
+        filtered_df["Status"]
+        == "❌ Short"
+    ].copy()
+
+    planner_df = planner_df.sort_values(
+        by="Adjusted Target Pack Date"
+    )
+
+    columns = [
+        "Document",
+        "Material",
+        "Material Description",
+        "Qty",
+        "StockQty",
+        "Adjusted Target Pack Date",
+        "PD Eff.Dte",
+        "ShipToCtry"
+    ]
+
+    if "DL" in planner_df.columns:
+        columns.append("DL")
+
+    available_columns = [
+        col
+        for col in columns
+        if col in planner_df.columns
+    ]
+
+    st.dataframe(
+        planner_df[
+            available_columns
+        ],
+        width="stretch",
+        hide_index=True,
+        height=800
+    )
