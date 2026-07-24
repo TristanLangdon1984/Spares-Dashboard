@@ -107,15 +107,21 @@ def classify_product(material):
 
 def build_filtered_df():
 
+    df = load_backlog()
+
     print("Rows loaded:", len(df))
 
     if "Document" in df.columns:
-    print("Max Document:", df["Document"].astype(str).max())
+        print(
+            "Max Document:",
+            df["Document"].astype(str).max()
+        )
 
     if "Doc. Date" in df.columns:
-    print("Max Doc Date:", df["Doc. Date"].max())
-    
-    df = load_backlog()
+        print(
+            "Max Doc Date:",
+            df["Doc. Date"].max()
+        )
 
     df["Material"] = (
         df["Material"]
@@ -123,6 +129,107 @@ def build_filtered_df():
         .str.strip()
     )
 
+    df = df[
+        ~df["Material"].isin(EXCLUDED_PARTS)
+    ]
+
+    df = df[
+        ~df["Material"].isin(C4C_PARTS)
+    ]
+
+    for prefix in EXCLUDED_PREFIXES:
+
+        df = df[
+            ~df["Material"].str.startswith(prefix)
+        ]
+
+    df["Doc. Date"] = pd.to_datetime(
+        df["Doc. Date"],
+        dayfirst=True,
+        errors="coerce"
+    )
+
+    df["PD Eff.Dte"] = pd.to_datetime(
+        df["PD Eff.Dte"],
+        dayfirst=True,
+        errors="coerce"
+    )
+
+    initial_pack_date = df["Doc. Date"].apply(
+        lambda x: add_business_days(x, 3)
+    )
+
+    df["Adjusted Target Pack Date"] = initial_pack_date
+
+    date_gap = (
+        df["PD Eff.Dte"]
+        - initial_pack_date
+    ).dt.days
+
+    needs_replan = date_gap > 2
+
+    df.loc[
+        needs_replan,
+        "Adjusted Target Pack Date"
+    ] = df.loc[
+        needs_replan,
+        "PD Eff.Dte"
+    ].apply(
+        lambda x: subtract_business_days(x, 3)
+    )
+
+    df["Qty"] = pd.to_numeric(
+        df["Bklg.Qty"]
+        .astype(str)
+        .str.replace(",", ".", regex=False),
+        errors="coerce"
+    ).fillna(0)
+
+    df["StockQty"] = pd.to_numeric(
+        df["Stock"]
+        .astype(str)
+        .str.replace(",", ".", regex=False),
+        errors="coerce"
+    ).fillna(0)
+
+    df["Product"] = df["Material"].apply(
+        classify_product
+    )
+
+    df["Status"] = "❌ Short"
+
+    df.loc[
+        df["StockQty"] >= df["Qty"],
+        "Status"
+    ] = "✅ Can Deliver"
+
+    instrument_documents = set(
+        df.loc[
+            df["Material"].isin(INSTRUMENT_PARTS),
+            "Document"
+        ]
+    )
+
+    df["Instrument"] = (
+        df["Document"]
+        .isin(instrument_documents)
+    )
+
+    obsolete_documents = set(
+        df.loc[
+            df["Material"].isin(OBSOLETE_PARTS),
+            "Document"
+        ]
+    )
+
+    df["Obsolete"] = (
+        df["Document"]
+        .isin(obsolete_documents)
+    )
+
+    print(df["Status"].value_counts())
+
+    return df
     df = df[
         ~df["Material"].isin(EXCLUDED_PARTS)
     ]
