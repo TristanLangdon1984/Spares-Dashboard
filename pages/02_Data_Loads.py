@@ -41,26 +41,16 @@ if daily_file is not None:
             f.write(
                 daily_file.getbuffer()
             )
+st.success("301 Daily uploaded successfully")
 
-        st.success(
-            f"""
-301 Daily uploaded successfully
+st.write("Saved to:")
+st.code(str(output_file.resolve()))
 
-File: {output_file.name}
+st.write("File exists:")
+st.write(output_file.exists())
 
-Uploaded: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M:%S')}
-"""
-        )
-
-        st.metric(
-            "File Size KB",
-            round(
-                len(
-                    daily_file.getbuffer()
-                ) / 1024,
-                1
-            )
-        )
+st.write("Size on disk:")
+st.write(output_file.stat().st_size)
 
     except Exception as e:
 
