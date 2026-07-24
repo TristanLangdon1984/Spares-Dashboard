@@ -109,20 +109,7 @@ def build_filtered_df():
 
     df = load_backlog()
 
-    print("Rows loaded:", len(df))
-
-    if "Document" in df.columns:
-        print(
-            "Max Document:",
-            df["Document"].astype(str).max()
-        )
-
-    if "Doc. Date" in df.columns:
-        print(
-            "Max Doc Date:",
-            df["Doc. Date"].max()
-        )
-
+    
     df["Material"] = (
         df["Material"]
         .astype(str)
