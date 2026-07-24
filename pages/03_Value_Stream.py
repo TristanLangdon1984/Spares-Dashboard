@@ -14,21 +14,6 @@ st.title("Value Stream")
 
 df = build_filtered_df()
 
-st.write(df.head())
-
-st.write("Rows:", len(df))
-
-st.write(
-    df[[
-        "Document",
-        "Doc. Date",
-        "Material"
-    ]]
-    .sort_values("Doc. Date", ascending=False)
-    .head(10)
-)
-
-
 # GLOBAL FILTERS
 
 f1, f2, f3, f4, f5, f6 = st.columns(6)
