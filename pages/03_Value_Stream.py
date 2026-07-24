@@ -18,7 +18,13 @@ st.write("Status Counts")
 st.write(df["Status"].value_counts().to_dict())
 
 st.write("DL Counts")
-st.write(df["DL"].value_counts(dropna=False).to_dict())
+st.write(
+    df["DL"]
+    .fillna("(blank)")
+    .astype(str)
+    .value_counts()
+    .to_dict()
+)
 
 # GLOBAL FILTERS
 
