@@ -17,14 +17,15 @@ df = build_filtered_df()
 st.write("Status Counts")
 st.write(df["Status"].value_counts().to_dict())
 
-st.write("DL Counts")
-st.write(
-    df["DL"]
-    .fillna("(blank)")
-    .astype(str)
-    .value_counts()
-    .to_dict()
+counts = (
+    df.groupby(
+        ["Status", "DL"],
+        dropna=False
+    )
+    .size()
 )
+
+st.write(counts.to_dict())
 
 # GLOBAL FILTERS
 
