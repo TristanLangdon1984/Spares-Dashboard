@@ -223,10 +223,18 @@ st.subheader(
 if "Material" in filtered_df.columns:
 
     materials_list = sorted(
-        filtered_df["Material"]
-        .astype(str)
-        .unique()
-    )
+    filtered_df["Material"]
+    .dropna()
+    .astype(str)
+    .str.strip()
+    .unique()
+    .tolist()
+)
+
+selected_material = st.selectbox(
+    "Select Material",
+    materials_list
+)
 
     selected_material = st.selectbox(
         "Select Material",
