@@ -13,6 +13,51 @@ st.set_page_config(
 st.title("Planning")
 
 filtered_df = build_filtered_df()
+
+today = pd.Timestamp.today().normalize()
+
+late_orders = len(
+    filtered_df[
+        filtered_df["Adjusted Target Pack Date"]
+        < today
+    ]
+)
+
+short_orders = len(
+    filtered_df[
+        filtered_df["Status"]
+        == "❌ Short"
+    ]
+)
+
+released_orders = len(
+    filtered_df[
+        filtered_df["DL"]
+        .fillna("")
+        .astype(str)
+        .str.upper()
+        .str.strip()
+        == "X"
+    ]
+)
+
+k1, k2, k3 = st.columns(3)
+
+k1.metric(
+    "Late Orders",
+    late_orders
+)
+
+k2.metric(
+    "Short Orders",
+    short_orders
+)
+
+k3.metric(
+    "Released Orders",
+    released_orders
+)
+
 # TABS
 
 tab1, tab2, tab3 = st.tabs(
