@@ -132,8 +132,8 @@ if "DL" in filtered_df.columns:
         .str.strip()
     )
 
-    if released_filter == "✅ Released":
-    filtered_df = filtered_df[
+if released_filter == "✅ Released":
+   filtered_df = filtered_df[
         dl_flag == "X"
     ]
 
