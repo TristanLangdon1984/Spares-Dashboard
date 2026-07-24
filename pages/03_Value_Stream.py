@@ -23,7 +23,10 @@ counts = (
         dropna=False
     )
     .size()
+    .reset_index(name="Count")
 )
+
+st.dataframe(counts)
 
 st.write(counts.to_dict())
 
