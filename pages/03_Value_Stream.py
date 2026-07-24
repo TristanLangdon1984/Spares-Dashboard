@@ -250,9 +250,9 @@ k4.metric(
 
 tab1, tab2, tab3, tab4 = st.tabs(
     [
+        "Backlog Recovery",
         "Due Today",
         "Next 7 Days",
-        "Backlog Recovery",
         "Future Orders"
     ]
 )
@@ -325,15 +325,15 @@ def build_display_df(source_df):
 
 with tab1:
 
-    st.subheader("Orders Due Today")
+    st.subheader("Backlog Recovery")
 
     st.metric(
-        "Order Lines",
-        len(due_today)
+        "Backlog Lines",
+        len(backlog)
     )
 
     st.dataframe(
-        build_display_df(due_today),
+        build_display_df(backlog),
         width="stretch",
         hide_index=True,
         height=900
@@ -357,15 +357,15 @@ with tab2:
 
 with tab3:
 
-    st.subheader("Backlog Recovery")
+    st.subheader("Orders Due Today")
 
     st.metric(
-        "Backlog Lines",
-        len(backlog)
+        "Order Lines",
+        len(due_today)
     )
 
     st.dataframe(
-        build_display_df(backlog),
+        build_display_df(due_today),
         width="stretch",
         hide_index=True,
         height=900
