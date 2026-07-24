@@ -9,8 +9,12 @@ st.set_page_config(
 
 st.title("Data Loads")
 
+# DATA FOLDER
 data_dir = Path("data")
 data_dir.mkdir(exist_ok=True)
+
+st.write("Data Folder:")
+st.code(str(data_dir.resolve()))
 
 # --------------------------
 # 301 DAILY
@@ -33,24 +37,36 @@ if daily_file is not None:
             "ZVREP386 - 3013BACKLOG1.XLS"
         )
 
-        with open(
-            output_file,
-            "wb"
-        ) as f:
+        with open(output_file, "wb") as f:
 
             f.write(
                 daily_file.getbuffer()
             )
-st.success("301 Daily uploaded successfully")
 
-st.write("Saved to:")
-st.code(str(output_file.resolve()))
+        st.success(
+            "301 Daily uploaded successfully"
+        )
 
-st.write("File exists:")
-st.write(output_file.exists())
+        st.write("Saved To:")
+        st.code(str(output_file.resolve()))
 
-st.write("Size on disk:")
-st.write(output_file.stat().st_size)
+        st.write("File Exists:")
+        st.write(output_file.exists())
+
+        st.write("File Size (KB):")
+        st.write(
+            round(
+                output_file.stat().st_size / 1024,
+                1
+            )
+        )
+
+        st.write("Last Modified:")
+        st.write(
+            pd.Timestamp.fromtimestamp(
+                output_file.stat().st_mtime
+            )
+        )
 
     except Exception as e:
 
@@ -81,32 +97,34 @@ if mb51_file is not None:
             "MB51 - MEL_SPARES.XLS"
         )
 
-        with open(
-            output_file,
-            "wb"
-        ) as f:
+        with open(output_file, "wb") as f:
 
             f.write(
                 mb51_file.getbuffer()
             )
 
         st.success(
-            f"""
-MB51 uploaded successfully
-
-File: {output_file.name}
-
-Uploaded: {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M:%S')}
-"""
+            "MB51 uploaded successfully"
         )
 
-        st.metric(
-            "File Size KB",
+        st.write("Saved To:")
+        st.code(str(output_file.resolve()))
+
+        st.write("File Exists:")
+        st.write(output_file.exists())
+
+        st.write("File Size (KB):")
+        st.write(
             round(
-                len(
-                    mb51_file.getbuffer()
-                ) / 1024,
+                output_file.stat().st_size / 1024,
                 1
+            )
+        )
+
+        st.write("Last Modified:")
+        st.write(
+            pd.Timestamp.fromtimestamp(
+                output_file.stat().st_mtime
             )
         )
 
@@ -130,15 +148,12 @@ files = []
 
 for file in data_dir.glob("*"):
 
-    modified = pd.Timestamp(
-        file.stat().st_mtime,
-        unit="s"
-    )
-
     files.append(
         {
             "File": file.name,
-            "Last Updated": modified.strftime(
+            "Last Updated": pd.Timestamp.fromtimestamp(
+                file.stat().st_mtime
+            ).strftime(
                 "%d/%m/%Y %H:%M:%S"
             ),
             "Size KB": round(
@@ -152,13 +167,11 @@ if files:
 
     files_df = pd.DataFrame(files)
 
-    files_df = files_df.sort_values(
-        by="Last Updated",
-        ascending=False
-    )
-
     st.dataframe(
-        files_df,
+        files_df.sort_values(
+            by="Last Updated",
+            ascending=False
+        ),
         width="stretch",
         hide_index=True
     )
