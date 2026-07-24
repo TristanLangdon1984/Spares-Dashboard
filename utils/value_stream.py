@@ -107,6 +107,14 @@ def classify_product(material):
 
 def build_filtered_df():
 
+print("Rows loaded:", len(df))
+
+if "Document" in df.columns:
+    print("Max Document:", df["Document"].astype(str).max())
+
+if "Doc. Date" in df.columns:
+    print("Max Doc Date:", df["Doc. Date"].max())
+    
     df = load_backlog()
 
     df["Material"] = (
